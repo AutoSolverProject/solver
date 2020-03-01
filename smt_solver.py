@@ -11,7 +11,7 @@ def solver(formula):
     else:
         assignment = assign_in_formula(propositional_assignment, formula)
         congruence_closer = get_congruence_closer(formula)
-        if
+
 
 
 def get_subterms(formula):
@@ -22,6 +22,6 @@ def get_subterms(formula):
     return get_subterms(formula.first) | get_subterms(formula.second)
 
 
-def make_set(term):
+def make_set(subterms):
 
 
