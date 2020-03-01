@@ -5,8 +5,8 @@
 
 """Tests all Chapter 9 tasks."""
 
-from predicates.syntax_test import *
-from predicates.proofs_test import *
+from first_order_logic.syntax_test import *
+from first_order_logic.proofs_test import *
 
 def test_task1(debug=False):
     test_term_substitute(debug)
