@@ -9,12 +9,12 @@ from typing import List, Union
 
 from logic_utils import frozendict
 
-from propositions.syntax import *
-from propositions.proofs import *
-from propositions.deduction import *
-from propositions.semantics import *
+from propositional_logic.syntax import *
+from propositional_logic.proofs import *
+from propositional_logic.deduction import *
+from propositional_logic.semantics import *
 #from propositional_logic.operators import *
-from propositions.axiomatic_systems import *
+from propositional_logic.axiomatic_systems import *
 
 def formulae_capturing_model(model: Model) -> List[Formula]:
     """Computes the formulae that capture the given model: ``'``\ `x`\ ``'``

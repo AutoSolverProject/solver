@@ -5,9 +5,9 @@
 
 """Tests for the propositional_logic.operators module."""
 
-from propositions.syntax import *
-from propositions.semantics import *
-from propositions.operators import *
+from propositional_logic.syntax import *
+from propositional_logic.semantics import *
+from propositional_logic.operators import *
 
 many_fs = ['F', 'T', 'r', '~x', '(x+y)', '(x<->y)', '(x-&y)', '(x-|y)', '(x|y)',
            '(x->y)', '(x&y)', '(x&x)', '(p&q)', '(x|(y&z))', '~(~x|~(y|z))',

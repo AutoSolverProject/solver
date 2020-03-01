@@ -5,7 +5,7 @@
 
 """Tests for the first_order_logic.prover module."""
 
-from predicates.some_proofs import *
+from first_order_logic.some_proofs import *
 
 def test_prover_basic(debug=False):
     proof = syllogism_proof(debug)

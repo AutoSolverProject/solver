@@ -5,9 +5,9 @@
 
 """Tests all Chapter 4 tasks."""
 
-from propositions.proofs_test import *
-from propositions.semantics_test import *
-from propositions.some_proofs_test import *
+from propositional_logic.proofs_test import *
+from propositional_logic.semantics_test import *
+from propositional_logic.some_proofs_test import *
 
 def test_task1(debug=False):
     test_variables(debug)

@@ -9,9 +9,9 @@ from typing import Tuple
 
 from logic_utils import fresh_variable_name_generator
 
-from predicates.syntax import *
-from predicates.proofs import *
-from predicates.prover import *
+from first_order_logic.syntax import *
+from first_order_logic.proofs import *
+from first_order_logic.prover import *
 
 #: Additional axioms of quantification for first-order predicate logic.
 ADDITIONAL_QUANTIFICATION_AXIOMS = (

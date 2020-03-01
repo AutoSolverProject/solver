@@ -7,7 +7,7 @@
 
 from logic_utils import frozendict
 
-from propositions.syntax import *
+from propositional_logic.syntax import *
 
 # Testing for Chapter 1
 

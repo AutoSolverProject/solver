@@ -5,9 +5,9 @@
 
 """Tests for the propositional_logic.reductions module."""
 
-from propositions.syntax import *
-from propositions.semantics import *
-from propositions.reductions import *
+from propositional_logic.syntax import *
+from propositional_logic.semantics import *
+from propositional_logic.reductions import *
 
 TEST_GRAPHS = [
     ((1, frozenset()), True), # empty graph

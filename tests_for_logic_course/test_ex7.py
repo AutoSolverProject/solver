@@ -5,8 +5,8 @@
 
 """Tests all Chapter 7 tasks."""
 
-from predicates.syntax_test import *
-from predicates.semantics_test import *
+from first_order_logic.syntax_test import *
+from first_order_logic.semantics_test import *
 
 def test_task1(debug=False):
     test_term_repr(debug)

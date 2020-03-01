@@ -5,9 +5,9 @@
 
 """Tests all Chapter 6 tasks."""
 
-from propositions.proofs_test import test_is_valid
-from propositions.tautology_test import *
-from propositions.some_proofs_test import *
+from propositional_logic.proofs_test import test_is_valid
+from propositional_logic.tautology_test import *
+from propositional_logic.some_proofs_test import *
 
 def pretest_validity(debug=False):
     test_is_valid(debug)

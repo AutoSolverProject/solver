@@ -5,7 +5,7 @@
 
 """Tests for the first_order_logic.some_proofs module."""
 
-from predicates.some_proofs import *
+from first_order_logic.some_proofs import *
 
 def test_lovers_proof(debug=False):
     proof = lovers_proof(debug)

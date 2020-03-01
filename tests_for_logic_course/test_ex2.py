@@ -5,8 +5,8 @@
 
 """Tests all Chapter 2 tasks."""
 
-from propositions.semantics_test import *
-from propositions.reductions_test import *
+from propositional_logic.semantics_test import *
+from propositional_logic.reductions_test import *
 
 def test_task1(debug=False):
     test_evaluate(debug)

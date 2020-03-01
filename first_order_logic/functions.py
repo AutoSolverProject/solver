@@ -10,8 +10,8 @@ from typing import AbstractSet, List, Set
 
 from logic_utils import fresh_variable_name_generator
 
-from predicates.syntax import *
-from predicates.semantics import *
+from first_order_logic.syntax import *
+from first_order_logic.semantics import *
 
 def function_name_to_relation_name(function: str) -> str:
     """Converts the given function name to a canonically corresponding relation

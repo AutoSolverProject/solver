@@ -5,8 +5,8 @@
 
 """Tests for the first_order_logic.semantics module."""
 
-from predicates.syntax import *
-from predicates.semantics import *
+from first_order_logic.syntax import *
+from first_order_logic.semantics import *
 
 def test_evaluate_term(debug=False):
     model = Model({'0', '1'}, {'c': '1'}, {},

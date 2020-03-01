@@ -5,9 +5,9 @@
 
 """Tests for the first_order_logic.functions module."""
 
-from predicates.syntax import *
-from predicates.semantics import *
-from predicates.functions import *
+from first_order_logic.syntax import *
+from first_order_logic.semantics import *
+from first_order_logic.functions import *
 
 def test_replace_functions_with_relations_in_model(debug):
     model = Model(

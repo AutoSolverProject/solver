@@ -11,7 +11,7 @@ from typing import AbstractSet, Iterable, FrozenSet, List, Mapping, Optional, \
 
 from logic_utils import frozen
 
-from propositions.syntax import *
+from propositional_logic.syntax import *
 
 SpecializationMap = Mapping[str, Formula]
 

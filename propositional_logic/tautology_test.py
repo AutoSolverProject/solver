@@ -7,13 +7,13 @@
 
 from logic_utils import frozendict
 
-from propositions.syntax import *
-from propositions.semantics import *
-from propositions.proofs import *
-from propositions.deduction import *
-from propositions.tautology import *
+from propositional_logic.syntax import *
+from propositional_logic.semantics import *
+from propositional_logic.proofs import *
+from propositional_logic.deduction import *
+from propositional_logic.tautology import *
 
-from propositions.proofs_test import offending_line
+from propositional_logic.proofs_test import offending_line
 
 def test_formulae_capturing_model(debug=False):
     for q,a in [({'p':True},['p']),

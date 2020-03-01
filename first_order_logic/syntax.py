@@ -10,7 +10,7 @@ from typing import AbstractSet, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from logic_utils import fresh_variable_name_generator, frozen, frozendict
 
-from propositions.syntax import Formula as PropositionalFormula, \
+from propositional_logic.syntax import Formula as PropositionalFormula, \
                                 is_variable as is_propositional_variable
 
 class ForbiddenVariableError(Exception):

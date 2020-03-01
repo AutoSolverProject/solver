@@ -6,10 +6,10 @@
 """Tests for the first_order_logic.completeness module."""
 import time
 
-from propositions.semantics import is_tautology
-from predicates.syntax import *
-from predicates.semantics import *
-from predicates.completeness import *
+from propositional_logic.semantics import is_tautology
+from first_order_logic.syntax import *
+from first_order_logic.semantics import *
+from first_order_logic.completeness import *
 
 # Tests for is_***_closed functions
 
@@ -534,7 +534,7 @@ def test_universal_closure_step(debug=False):
         assert model.is_model_of(augmented)
 
 def test_replace_constant(debug=False):
-    from predicates.some_proofs import \
+    from first_order_logic.some_proofs import \
          syllogism_proof, syllogism_proof_with_universal_instantiation,\
          GROUP_AXIOMS, unique_zero_proof
 

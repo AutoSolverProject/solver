@@ -7,8 +7,8 @@
 
 from logic_utils import frozendict
 
-from propositions.syntax import *
-from propositions.proofs import *
+from propositional_logic.syntax import *
+from propositional_logic.proofs import *
 
 # Tests for InferenceRule
 
@@ -581,7 +581,7 @@ def test_prove_specialization(debug=False):
         assert instance_proof.is_valid(), offending_line(instance_proof)
 
 def test_inline_proof_once(debug=False):
-    from propositions.some_proofs import prove_and_commutativity
+    from propositional_logic.some_proofs import prove_and_commutativity
 
     rule0 = InferenceRule([Formula.parse('((x|y)|z)')],
                           Formula.parse('(x|(y|z))'))

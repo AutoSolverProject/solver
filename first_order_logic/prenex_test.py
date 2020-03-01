@@ -5,7 +5,7 @@
 
 """Tests for the first_order_logic.prenex module."""
 
-from predicates.prenex import *
+from first_order_logic.prenex import *
 
 def test_is_quantifier_free(debug=False):
     for formula,free in [

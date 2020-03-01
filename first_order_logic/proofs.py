@@ -8,9 +8,9 @@ from typing import AbstractSet, FrozenSet, Mapping, Sequence, Tuple, Union
 
 from logic_utils import frozen, frozendict
 
-from propositions.semantics import is_tautology as is_propositional_tautology
+from propositional_logic.semantics import is_tautology as is_propositional_tautology
 
-from predicates.syntax import *
+from first_order_logic.syntax import *
 
 #: A mapping from constant names, variable names, and relation names to
 #: terms, variable names, and formulas respectively.
@@ -751,14 +751,14 @@ class Proof:
                 return False
         return True
 
-from propositions.proofs import Proof as PropositionalProof, \
+from propositional_logic.proofs import Proof as PropositionalProof, \
                                 InferenceRule as PropositionalInferenceRule, \
                                 SpecializationMap as \
                                 PropositionalSpecializationMap
-from propositions.axiomatic_systems import AXIOMATIC_SYSTEM as \
+from propositional_logic.axiomatic_systems import AXIOMATIC_SYSTEM as \
                                            PROPOSITIONAL_AXIOMATIC_SYSTEM, \
                                            MP, I0, I1, D, I2, N, NI, NN, R
-from propositions.tautology import prove_tautology as \
+from propositional_logic.tautology import prove_tautology as \
                                    prove_propositional_tautology
 
 # Schema equivalents of the propositional-logic axioms for implication and

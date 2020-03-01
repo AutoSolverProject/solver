@@ -9,7 +9,7 @@ from typing import AbstractSet, FrozenSet, Generic, Mapping, Tuple, TypeVar, Lis
 
 from logic_utils import frozen, frozendict
 
-from predicates.syntax import *
+from first_order_logic.syntax import *
 
 
 OPERATOR_BOOLEAN_DICT = {'~': lambda x: not x,

@@ -5,7 +5,7 @@
 
 """Axiomatic inference rules of propositional logic."""
 
-from propositions.proofs import *
+from propositional_logic.proofs import *
 
 # Axiomatic inference rules that only contain implies
 

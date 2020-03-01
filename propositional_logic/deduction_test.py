@@ -5,12 +5,12 @@
 
 """Tests for the propositional_logic.deduction module."""
 
-from propositions.syntax import *
-from propositions.semantics import *
-from propositions.proofs import *
-from propositions.deduction import *
+from propositional_logic.syntax import *
+from propositional_logic.semantics import *
+from propositional_logic.proofs import *
+from propositional_logic.deduction import *
 
-from propositions.proofs_test import offending_line
+from propositional_logic.proofs_test import offending_line
 
 def test_prove_corollary(debug=False):
     x = Formula('x')
@@ -156,8 +156,8 @@ def prove_from_encoding(rule):
     return Proof(rule, {MP, newrule}, lines)
 
 def test_prove_from_encoding(debug=True):
-    from propositions.some_proofs import prove_and_commutativity
-    from propositions.tautology import encode_as_formula
+    from propositional_logic.some_proofs import prove_and_commutativity
+    from propositional_logic.tautology import encode_as_formula
 
     for p in [DISJUNCTION_COMMUTATIVITY_PROOF,
               prove_and_commutativity(),
@@ -174,7 +174,7 @@ def test_prove_from_encoding(debug=True):
             assert pp.is_valid(), offending_line(pp)
             
 def test_remove_assumption(debug=False):
-    from propositions.some_proofs import prove_and_commutativity
+    from propositional_logic.some_proofs import prove_and_commutativity
 
     for oldp in [DISJUNCTION_COMMUTATIVITY_PROOF,
                  prove_and_commutativity(),

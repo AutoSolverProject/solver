@@ -5,17 +5,17 @@
 
 """Tests for the first_order_logic.deduction module."""
 
-from predicates.deduction import *
+from first_order_logic.deduction import *
 
 def test_remove_assumption(debug=False):
-    from predicates.some_proofs import \
+    from first_order_logic.some_proofs import \
          syllogism_proof, syllogism_proof_with_universal_instantiation,\
          syllogism_all_all_proof,\
          syllogism_all_all_proof_with_tautological_implication,\
          syllogism_all_exists_proof,\
          syllogism_all_exists_proof_with_existential_derivation,\
          GROUP_AXIOMS, unique_zero_proof, lovers_proof, homework_proof
-    from predicates.some_proofs_test import \
+    from first_order_logic.some_proofs_test import \
          test_unique_zero_proof, test_lovers_proof, test_homework_proof
 
     # Test one invocation
@@ -117,9 +117,9 @@ def test_proof_by_way_of_contradiction(debug=False):
 
     # Test on Russell's Paradox proof, when replacing the Axiom Schema of
     # Comprehension with its instance that is actually used.
-    from predicates.some_proofs import \
+    from first_order_logic.some_proofs import \
          COMPREHENSION_AXIOM, russell_paradox_proof
-    from predicates.some_proofs_test import test_russell_paradox_proof
+    from first_order_logic.some_proofs_test import test_russell_paradox_proof
     test_russell_paradox_proof()
     assumption = Formula.parse(
         'Ey[Ax[((In(x,y)->~In(x,x))&(~In(x,x)->In(x,y)))]]')

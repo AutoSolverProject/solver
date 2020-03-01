@@ -5,9 +5,9 @@
 
 """Tests all Chapter 3 tasks."""
 
-from propositions.syntax_test import *
-from propositions.semantics_test import *
-from propositions.operators_test import *
+from propositional_logic.syntax_test import *
+from propositional_logic.semantics_test import *
+from propositional_logic.operators_test import *
 
 def test_before_tasks(debug=False):
     assert is_binary('+'), 'Change is_binary() before testing Chapter 3 tasks.'

@@ -5,10 +5,10 @@
 
 """Some proofs in propositional logic."""
 
-from propositions.syntax import *
-from propositions.proofs import *
-from propositions.axiomatic_systems import *
-from propositions.deduction import *
+from propositional_logic.syntax import *
+from propositional_logic.proofs import *
+from propositional_logic.axiomatic_systems import *
+from propositional_logic.deduction import *
 
 # Some inference rules that only use conjunction.
 

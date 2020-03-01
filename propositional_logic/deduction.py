@@ -5,9 +5,9 @@
 
 """Useful proof manipulation maneuvers in propositional logic."""
 
-from propositions.syntax import *
-from propositions.proofs import *
-from propositions.axiomatic_systems import *
+from propositional_logic.syntax import *
+from propositional_logic.proofs import *
+from propositional_logic.axiomatic_systems import *
 
 def prove_corollary(antecedent_proof: Proof, consequent: Formula,
                     conditional: InferenceRule) -> Proof:

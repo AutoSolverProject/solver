@@ -5,9 +5,9 @@
 
 """Useful proof manipulation maneuvers in predicate logic."""
 
-from predicates.syntax import *
-from predicates.proofs import *
-from predicates.prover import *
+from first_order_logic.syntax import *
+from first_order_logic.proofs import *
+from first_order_logic.prover import *
 
 def remove_assumption(proof: Proof, assumption: Formula,
                       print_as_proof_forms: bool = False) -> Proof:

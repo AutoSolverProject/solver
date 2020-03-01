@@ -5,8 +5,8 @@
 
 """Tests all Chapter 8 tasks."""
 
-from predicates.syntax_test import *
-from predicates.functions_test import *
+from first_order_logic.syntax_test import *
+from first_order_logic.functions_test import *
 
 def test_task1(debug=False):
     test_replace_functions_with_relations_in_model(debug)

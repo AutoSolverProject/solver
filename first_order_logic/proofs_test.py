@@ -5,8 +5,8 @@
 
 """Tests for the first_order_logic.proofs module."""
 
-from predicates.syntax import *
-from predicates.proofs import *
+from first_order_logic.syntax import *
+from first_order_logic.proofs import *
 
 def test_instantiate_helper(debug=False):
     for formula,templates,constant_and_variable_instantiation_map,\
@@ -486,7 +486,7 @@ def test_axiom_specialization_map_to_schema_instantiation_map(debug=False):
     assert instantiation_map == expected, instantiation_map
 
 def test_prove_from_skeleton_proof(debug=False):
-    from propositions.tautology import prove_tautology
+    from propositional_logic.tautology import prove_tautology
 
     for formula,skeleton,substitution_map in [
         ('(R(c)->R(c))', '(z23->z23)', {'z23':Formula.parse('R(c)')}),

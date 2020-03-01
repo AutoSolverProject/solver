@@ -3,9 +3,9 @@
 # by Gonczarowski and Nisan.
 # File name: first_order_logic/some_proofs.py
 
-from predicates.syntax import *
-from predicates.proofs import *
-from predicates.prover import *
+from first_order_logic.syntax import *
+from first_order_logic.proofs import *
+from first_order_logic.prover import *
 # from first_order_logic.deduction import *
 # from first_order_logic.prenex import equivalence_of
 

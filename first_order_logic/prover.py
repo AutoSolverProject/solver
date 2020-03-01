@@ -8,8 +8,8 @@ from typing import AbstractSet, Collection, FrozenSet, List, Mapping, \
 
 from logic_utils import fresh_variable_name_generator
 
-from predicates.syntax import *
-from predicates.proofs import *
+from first_order_logic.syntax import *
+from first_order_logic.proofs import *
 
 class Prover:
     """A class for gradually creating a first-order logic proof from given

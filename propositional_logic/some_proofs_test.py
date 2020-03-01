@@ -5,12 +5,12 @@
 
 """Tests for the propositional_logic.some_proofs module."""
 
-from propositions.syntax import *
-from propositions.proofs import *
-from propositions.axiomatic_systems import *
-from propositions.some_proofs import *
+from propositional_logic.syntax import *
+from propositional_logic.proofs import *
+from propositional_logic.axiomatic_systems import *
+from propositional_logic.some_proofs import *
 
-from propositions.proofs_test import offending_line
+from propositional_logic.proofs_test import offending_line
 
 def test_prove_and_commutativity(debug=True):
     __test_prove_inference(prove_and_commutativity,

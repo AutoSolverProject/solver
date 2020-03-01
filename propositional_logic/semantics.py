@@ -9,8 +9,8 @@ from typing import AbstractSet, Iterable, Iterator, List, Mapping
 
 from tabulate import tabulate
 
-from propositions.syntax import *
-from propositions.proofs import *
+from propositional_logic.syntax import *
+from propositional_logic.proofs import *
 
 Model = Mapping[str, bool]
 

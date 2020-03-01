@@ -9,12 +9,12 @@ import itertools
 
 from logic_utils import fresh_constant_name_generator
 
-from predicates.syntax import *
-from predicates.semantics import *
-from predicates.proofs import *
-from predicates.prover import *
-from predicates.deduction import *
-from predicates.prenex import *
+from first_order_logic.syntax import *
+from first_order_logic.semantics import *
+from first_order_logic.proofs import *
+from first_order_logic.prover import *
+from first_order_logic.deduction import *
+from first_order_logic.prenex import *
 
 def get_constants(formulas: AbstractSet[Formula]) -> Set[str]:
     """Finds all constant names in the given formulas.

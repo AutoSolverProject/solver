@@ -7,9 +7,9 @@
 
 from logic_utils import frozendict
 
-from propositions.syntax import *
-from propositions.semantics import *
-from propositions.axiomatic_systems import *
+from propositional_logic.syntax import *
+from propositional_logic.semantics import *
+from propositional_logic.axiomatic_systems import *
 
 def test_evaluate(debug=False):
     infix1 = '~(p&q7)'
@@ -307,7 +307,7 @@ def is_DNF(formula):
             is_DNF(formula.second))
 
 def test_evaluate_inference(debug=False):
-    from propositions.proofs import InferenceRule
+    from propositional_logic.proofs import InferenceRule
 
     # Test 1
     rule1 = InferenceRule([Formula.parse('p'), Formula.parse('q')],
@@ -341,7 +341,7 @@ def test_evaluate_inference(debug=False):
                (model['q'] and not model['r']) or model['r']
 
 def test_is_sound_inference(debug=False):
-    from propositions.proofs import InferenceRule
+    from propositional_logic.proofs import InferenceRule
 
     for assumptions,conclusion,tautological in [
             [[], '(~p|p)', True],

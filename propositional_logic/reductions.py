@@ -8,8 +8,8 @@
 from __future__ import annotations
 from typing import Mapping, Optional, Set, Tuple, Union
 
-from propositions.syntax import *
-from propositions.semantics import *
+from propositional_logic.syntax import *
+from propositional_logic.semantics import *
 
 #: A graph on a vertex set of the form (1, ..., `n_vertices`\ ), represented by
 #: the number of vertices `n_vertices` and a set of edges over the vertices.

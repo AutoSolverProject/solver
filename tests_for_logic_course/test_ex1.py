@@ -5,7 +5,7 @@
 
 """Tests all Chapter 1 tasks."""
 
-from propositions.syntax_test import *
+from propositional_logic.syntax_test import *
 
 def test_task1(debug=False):
     test_repr(debug)

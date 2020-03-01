@@ -6,8 +6,8 @@
 """Syntactic conversion of propositional formulae to use only specific sets of
 operators."""
 
-from propositions.syntax import *
-from propositions.semantics import *
+from propositional_logic.syntax import *
+from propositional_logic.semantics import *
 
 def to_not_and_or(formula: Formula) -> Formula:
     """Syntactically converts the given formula to an equivalent formula that
