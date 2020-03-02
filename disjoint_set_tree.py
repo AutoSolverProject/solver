@@ -1,13 +1,12 @@
+from first_order_logic.syntax import Term
 
 
-class Tree:
-    class Node:
-        def __init__(self, term):
-            self.term = term
-            self.parent = self
-            self.rank = 0
-            self.size = 1
+class Node:
+    def __init__(self, term):
+        self.term = term
+        self.parent = self
+        self.size = 1
 
-    def __init__(self, root):
-        self.root = root
-        self.size = root.size
+    def __eq__(self, other):
+        return Term.__eq__(self.term, other.term)
+

@@ -1,4 +1,4 @@
-
+from logic_utils import __prefix_with_index_sequence_generator
 from propositional_logic.syntax import *
 from logic_utils import *
 
@@ -29,7 +29,8 @@ def find_all_sub_formulas(formula):
 
 def give_representation_to_subformulas(formula):
     all_sub_formulas = find_all_sub_formulas(formula)
-    representation = {sub_formula: next(fresh_variable_name_generator) for sub_formula in all_sub_formulas}
+    rep_generator = __prefix_with_index_sequence_generator('pg')
+    representation = {sub_formula: next(rep_generator) for sub_formula in all_sub_formulas}
     return representation
 
 
