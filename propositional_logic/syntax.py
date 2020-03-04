@@ -20,7 +20,7 @@ def is_variable(s: str) -> bool:
         ``True`` if the given string is an atomic proposition, ``False``
         otherwise.
     """
-    return s[0] >= 'p' and s[0] <= 'z' and (len(s) == 1 or s[1:].isdigit())
+    return s[0] >= 'p' and s[0] <= 'z' and (len(s) == 1 or s.isalnum())
 
 def is_constant(s: str) -> bool:
     """Checks if the given string is a constant.

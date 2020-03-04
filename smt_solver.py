@@ -27,7 +27,7 @@ def check_congruence_closure(assignment, formula):
         else:
             inequals.add(equality)
     for equality in inequalities:
-        if not assignment[equality]:
+        if assignment[equality]:
             node1, node2 = get_nodes(equality, disjoint_set)
             union(node1, node2)
         else:
