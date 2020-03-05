@@ -333,7 +333,7 @@ def is_sound_inference(rule: InferenceRule) -> bool:
     """
     # Task 4.3
 
-    vars = rule.variables()
+    vars = list(rule.variables())
     models = all_models(vars)
     if models is None:
         return evaluate_inference(rule, {})

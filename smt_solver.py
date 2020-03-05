@@ -1,42 +1,68 @@
 from sat_solver import *
 from first_order_logic.syntax import *
+from propositional_logic.syntax import Formula as PropositionalFormula
 from disjoint_set_tree import *
 
 
 def solver(formula):
     skeleton, sub_map = formula.propositional_skeleton()
     partial_assignment = get_assignment(skeleton)
-    if partial_assignment == "UNSAT":
-        return "UNSAT"
-    else:
-        assignment = assign_in_formula(partial_assignment, sub_map)
-        cc_value = check_congruence_closure(assignment, formula)
+    still_searching = True
+    while still_searching:
 
+        if partial_assignment == "UNSAT":
+            return "UNSAT"
+        else:
+            assignment = assign_in_formula(partial_assignment, sub_map)
+            cc_value = check_congruence_closure(assignment, formula)
+            if cc_value and len(partial_assignment.keys()) == len(skeleton.variables()):
+                return assignment
+            elif not cc_value:
+                conflict = get_conflict(assignment)
+                partial_assignment = get_assignment(skeleton, partial_assignment=partial_assignment, conflict=conflict)
+            else:
+                partial_assignment = get_assignment(skeleton, partial_assignment=partial_assignment)
+
+
+def assign_in_formula(partial_assignment, sub_map):
+    assignment = dict()
+    for a, v in partial_assignment.items():
+        assignment[sub_map[a]] = v
+    return assignment
 
 
 def check_congruence_closure(assignment, formula):
     subterms = get_subterms(formula)
     disjoint_set = make_set(subterms)
-    equalities = get_equalities(formula)
-    inequalities = get_inequalities(formula)
-    inequals = set()
+    equalities = get_equalities(assignment)
+    inequalities = get_inequalities(assignment)
     for equality in equalities:
-        if assignment[equality]:
-            node1, node2 = get_nodes(equality, disjoint_set)
-            union(node1, node2)
-        else:
-            inequals.add(equality)
+        node1, node2 = get_nodes(equality, disjoint_set)
+        union(node1, node2)
     for equality in inequalities:
-        if assignment[equality]:
-            node1, node2 = get_nodes(equality, disjoint_set)
-            union(node1, node2)
-        else:
-            inequals.add(equality)
-    for equality in inequals:
         node1, node2 = get_nodes(equality, disjoint_set)
         if find(node1) == find(node2):
             return False
     return True
+
+
+def get_conflict(assignment):
+    formula = '('
+    num_vars = len(assignment.keys())
+    i = 1
+    for a, v in assignment.items():
+        if v:
+            formula += '~' + a
+        else:
+            formula += a
+        if i == num_vars:
+            formula += ')'*(num_vars-1)
+        else:
+            formula += '|'
+            if i < num_vars - 1:
+                formula += '('
+        i += 1
+    return PropositionalFormula.parse(formula)
 
 
 def get_subterms(formula):
@@ -47,22 +73,20 @@ def get_subterms(formula):
     return get_subterms(formula.first) | get_subterms(formula.second)
 
 
-def get_equalities(formula):
-    if is_equality(formula.root):
-        return {formula}
-    elif is_binary(formula.root):
-        return get_equalities(formula.first) | get_equalities(formula.second)
-    elif is_unary(formula):
-        return get_inequalities(formula.first)
+def get_equalities(assignment):
+    equalities = set()
+    for equality in assignment:
+        if assignment[equality]:
+            equalities.add(equality)
+    return equalities
 
 
-def get_inequalities(formula):
-    if is_equality(formula.root):
-        return set()
-    elif is_binary(formula.root):
-        return get_equalities(formula.first) | get_equalities(formula.second)
-    elif is_unary(formula):
-        return get_equalities(formula.first)
+def get_inequalities(assignment):
+    equalities = set()
+    for equality in assignment:
+        if not assignment[equality]:
+            equalities.add(equality)
+    return equalities
 
 
 def make_set(subterms):
