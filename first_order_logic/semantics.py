@@ -24,7 +24,7 @@ OPERATOR_BOOLEAN_DICT = {'~': lambda x: not x,
 #: A generic type for a universe element in a model.
 T = TypeVar('T')
 
-@frozen
+# @frozen
 class Model(Generic[T]):
     """An immutable model for first-order logic constructs.
 
@@ -56,8 +56,7 @@ class Model(Generic[T]):
     def __init__(self, universe: AbstractSet[T],
                  constant_meanings: Mapping[str, T],
                  relation_meanings: Mapping[str, AbstractSet[Tuple[T, ...]]],
-                 function_meanings: Mapping[str, Mapping[Tuple[T, ...], T]] =
-                 frozendict()) -> None:
+                 function_meanings: Mapping[str, Mapping[Tuple[T, ...], T]] = {}) -> None:
         """Initializes a `Model` from its universe and constant, relation, and
         function meanings.
 

@@ -37,7 +37,7 @@ def is_constant(s: str) -> bool:
     Returns:
         ``True`` if the given string is a constant name, ``False`` otherwise.
     """
-    return  (((s[0] >= '0' and s[0] <= '9') or (s[0] >= 'a' and s[0] <= 'd'))
+    return  ((('0' <= s[0] <= '9') or ('a' <= s[0] <= 'd'))
              and s.isalnum()) or s == '_'
 
 def is_variable(s: str) -> bool:
@@ -586,7 +586,6 @@ class Formula:
             return self.predicate.constants()
         args = self.arguments
         return args[0].constants().union(args[1].constants())
-
 
     def variables(self) -> Set[str]:
         """Finds all variable names in the current formula.

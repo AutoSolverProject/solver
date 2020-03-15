@@ -5,6 +5,7 @@ from disjoint_set_tree import *
 
 
 def solver(formula):
+    model = get_model(formula)
     skeleton, sub_map = formula.propositional_skeleton()
     partial_assignment = get_assignment(skeleton)
     still_searching = True
@@ -22,6 +23,13 @@ def solver(formula):
                 partial_assignment = get_assignment(skeleton, partial_assignment=partial_assignment, conflict=conflict)
             else:
                 partial_assignment = get_assignment(skeleton, partial_assignment=partial_assignment)
+
+
+def get_model(formula):
+    constants = formula.constants()
+    functions = formula.functions()
+    primitives = get_primitives_in_formula(formula)
+
 
 
 def assign_in_formula(partial_assignment, sub_map):
@@ -124,3 +132,27 @@ def get_nodes(equality, disjoint_set):
         if node1 is not None and node2 is not None:
             break
     return node1, node2
+
+
+def get_primitives_in_formula(quantifier_free):
+    root = quantifier_free.root
+    if is_relation(root) or is_equality(root):
+        primitives = set()
+        for arg in quantifier_free.argument:
+            primitives.update(get_primitives_in_term(arg))
+        return primitives
+    elif is_unary(root):
+        return get_primitives_in_formula(quantifier_free.first)
+    return get_primitives_in_formula(quantifier_free.first) | (
+        get_primitives_in_formula(quantifier_free.second))
+
+
+def get_primitives_in_term(term):
+    root = term.root
+    if is_function(root):
+        primitives = {term}
+        for arg in term.arguments:
+            primitives.update(get_primitives_in_term(arg))
+        return primitives
+    else:
+        return set()
