@@ -7,7 +7,7 @@ from disjoint_set_tree import *
 def solver(formula):
     model = get_model(formula)
     skeleton, sub_map = formula.propositional_skeleton()
-    partial_assignment = get_assignment(skeleton)
+    partial_assignment = TOMER_get_assignment(skeleton)
     still_searching = True
     while still_searching:
 
@@ -20,16 +20,9 @@ def solver(formula):
                 return assignment
             elif not cc_value:
                 conflict = get_conflict(assignment)
-                partial_assignment = get_assignment(skeleton, partial_assignment=partial_assignment, conflict=conflict)
+                partial_assignment = TOMER_get_assignment(skeleton, partial_assignment=partial_assignment, conflict=conflict)
             else:
-                partial_assignment = get_assignment(skeleton, partial_assignment=partial_assignment)
-
-
-def get_model(formula):
-    constants = formula.constants()
-    functions = formula.functions()
-    primitives = get_primitives_in_formula(formula)
-
+                partial_assignment = TOMER_get_assignment(skeleton, partial_assignment=partial_assignment)
 
 
 def assign_in_formula(partial_assignment, sub_map):
