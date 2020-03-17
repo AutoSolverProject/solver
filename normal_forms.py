@@ -16,7 +16,7 @@ def to_cnf(f):
     f = to_nnf(f)
     if is_unary(f.root):
         return f
-    if not is_and_in_formula(f):
+    if not contains_and(f):
         return f
     return to_cnf_from_nnf(f)
 
@@ -26,7 +26,7 @@ def eliminate_iffs(f):
     if is_variable(root) or is_constant(root):
         return f
     elif is_unary(root):
-        return Formula('~', eliminate_iffs(f.first))
+        return Formula(root, eliminate_iffs(f.first))
     else:
         a, b = f.first, f.second
         if root == '<->':
@@ -42,7 +42,7 @@ def eliminate_implies(f):
     if is_variable(root) or is_constant(root):
         return f
     elif is_unary(root):
-        return Formula('~', eliminate_implies(f.first))
+        return Formula(root, eliminate_implies(f.first))
     else:
         a, b = f.first, f.second
         if root == '->':
@@ -97,9 +97,9 @@ def to_cnf_from_nnf(f):
     if root == '&':
         return Formula('&', to_cnf_from_nnf(a), to_cnf_from_nnf(b))
     else:
-        if is_and_in_formula(f.first):
+        if contains_and(f.first):
             f = to_cnf_on_left(f)
-        if is_and_in_formula(f.second):
+        if contains_and(f.second):
             f = to_cnf_on_right(f)
         return f
 
@@ -128,12 +128,12 @@ def to_cnf_on_right(f):
         return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
 
 
-def is_and_in_formula(f):
+def contains_and(f):
     root = f.root
     if is_variable(root) or is_constant(root) or is_unary(root):
         return False
     if root == '&':
         return True
     else:
-        return is_and_in_formula(f.first) or is_and_in_formula(f.second)
+        return contains_and(f.first) or contains_and(f.second)
 
