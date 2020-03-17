@@ -2,35 +2,30 @@
 from propositional_logic.syntax import *
 
 
-def find_all_sub_formulae(formula, include_variables=False, include_constants=False):
+def find_closure(formula):
 
-    sub_formulae = set()
+    closure = set()
 
-    def find_all_sub_formulas_helper(sub_formula):
-        if is_constant(sub_formula.root):
-            if include_constants:
-                sub_formulae.add(sub_formulae)
-            else:
-                return
-
-        if is_variable(sub_formula.root):
-            if include_variables:
-                sub_formulae.add(sub_formulae)
-            else:
-                return
+    def find_closure_helper(sub_formula):
+        if is_constant(sub_formula.root) or is_variable(sub_formula.root):
+            closure.add(sub_formula)
 
         elif is_unary(sub_formula.root):
-            sub_formulae.add(sub_formula)
-            find_all_sub_formulae(sub_formula.first)
+            closure.add(sub_formula)
+            find_closure_helper(sub_formula.first)
 
         elif is_binary(sub_formula.root):
-            sub_formulae.add(sub_formula)
-            find_all_sub_formulae(sub_formula.first)
-            find_all_sub_formulae(sub_formula.second)
+            closure.add(sub_formula)
+            find_closure_helper(sub_formula.first)
+            find_closure_helper(sub_formula.second)
 
-    find_all_sub_formulas_helper(formula)
-    return sub_formulae
-
-
+    find_closure_helper(formula)
+    return closure
 
 
+def is_constant_or_variable(formula):
+    return is_constant(formula.root) or is_variable(formula.root)
+
+
+def is_literal(formula):
+    return is_constant_or_variable(formula) or (is_unary(formula.root) and is_constant_or_variable(formula.first))
