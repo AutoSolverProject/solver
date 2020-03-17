@@ -1,36 +1,17 @@
+
+from formula_utils import find_all_sub_formulae
 from logic_utils import __prefix_with_index_sequence_generator
 from propositional_logic.syntax import *
-from logic_utils import *
 
 
 def tseitin_transformation():
     pass
 
 
-def find_all_sub_formulas(formula):
-
-    sub_formulas = set()
-
-    def find_all_sub_formulas_helper(sub_formula):
-        if is_variable(sub_formula.root) or is_constant(sub_formula.root):
-            return
-
-        elif is_unary(sub_formula.root):
-            sub_formulas.add(sub_formula)
-            find_all_sub_formulas(sub_formula.first)
-
-        elif is_binary(sub_formula.root):
-            sub_formulas.add(sub_formula)
-            find_all_sub_formulas(sub_formula.first)
-            find_all_sub_formulas(sub_formula.second)
-
-    return find_all_sub_formulas(formula)
-
-
 def give_representation_to_subformulas(formula):
-    all_sub_formulas = find_all_sub_formulas(formula)
+    all_sub_formulae = find_all_sub_formulae(formula)
     rep_generator = __prefix_with_index_sequence_generator('pg')
-    representation = {sub_formula: next(rep_generator) for sub_formula in all_sub_formulas}
+    representation = {sub_formula: next(rep_generator) for sub_formula in all_sub_formulae}
     return representation
 
 

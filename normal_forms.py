@@ -1,50 +1,69 @@
 from propositional_logic.syntax import *
+from test_utils import *
 
 
-def to_nnf(f):
-    f = eliminate_iffs(f)
-    f = eliminate_implies(f)
-    f = push_negation_in(f)
-    f = eliminate_double_negation(f)
-    return f
+normal_forms_DEBUG = test_utils_DEBUG
 
 
-def to_cnf(f):
-    root = f.root
+def to_nnf(formula, debug=normal_forms_DEBUG):
+    no_iffs = eliminate_iffs(formula)
+    no_implies = eliminate_implies(no_iffs)
+    pushed_negation_in = push_negation_in(no_implies)
+    eliminated_double_negation = eliminate_double_negation(pushed_negation_in)
+
+    if debug:
+        assert test_is_nnf(eliminated_double_negation)
+
+    return eliminated_double_negation
+
+
+def to_cnf(formula, debug=normal_forms_DEBUG):
+    root = formula.root
     if is_variable(root) or is_constant(root):
-        return f
-    f = to_nnf(f)
-    if is_unary(f.root):
-        return f
-    if not contains_and(f):
-        return f
-    return to_cnf_from_nnf(f)
+        in_cnf_form = formula
 
-
-def eliminate_iffs(f):
-    root = f.root
-    if is_variable(root) or is_constant(root):
-        return f
-    elif is_unary(root):
-        return Formula(root, eliminate_iffs(f.first))
     else:
-        a, b = f.first, f.second
+        in_nnf_form = to_nnf(formula)
+
+        if is_unary(in_nnf_form.root):  # in_nnf_form.first in either a variable or a constant
+            in_cnf_form = in_nnf_form
+        elif not contains_and(formula):
+            in_cnf_form = in_nnf_form
+        else:
+            in_cnf_form = to_cnf_from_nnf(formula)
+
+    if debug:
+        assert test_is_cnf(in_cnf_form)
+
+    return in_cnf_form
+
+
+def eliminate_iffs(formula):
+    root = formula.root
+    if is_variable(root) or is_constant(root):
+        return formula
+    elif is_unary(root):
+        return Formula(root, eliminate_iffs(formula.first))
+    else:
+        a, b = formula.first, formula.second
+        a_transformed = eliminate_iffs(a)
+        b_transformed = eliminate_iffs(b)
         if root == '<->':
-            first = Formula('->', a, b)
-            second = Formula('->', b, a)
+            first = Formula('->', a_transformed, b_transformed)
+            second = Formula('->', b_transformed, a_transformed)
             return Formula('&', first, second)
         else:
-            return Formula(root, eliminate_iffs(a), eliminate_iffs(b))
+            return Formula(root, a_transformed, b_transformed)
 
 
-def eliminate_implies(f):
-    root = f.root
+def eliminate_implies(formula):
+    root = formula.root
     if is_variable(root) or is_constant(root):
-        return f
+        return formula
     elif is_unary(root):
-        return Formula(root, eliminate_implies(f.first))
+        return Formula(root, eliminate_implies(formula.first))
     else:
-        a, b = f.first, f.second
+        a, b = formula.first, formula.second
         if root == '->':
             first = Formula('~', eliminate_implies(a))
             second = eliminate_implies(b)
@@ -53,59 +72,64 @@ def eliminate_implies(f):
             return Formula(root, eliminate_implies(a), eliminate_implies(b))
 
 
-def push_negation_in(f):
-    root = f.root
+def push_negation_in(formula):
+    root = formula.root
     if is_variable(root) or is_constant(root):
-        return f
+        return formula
     elif is_binary(root):
-        return Formula(root, push_negation_in(f.first), push_negation_in(f.second))
-    elif is_unary(root) and (is_variable(f.first.root) or is_constant(f.first.root)):
-        return f
+        return Formula(root, push_negation_in(formula.first), push_negation_in(formula.second))
+    elif is_unary(root) and (is_variable(formula.first.root) or is_constant(formula.first.root)):
+        return formula
     else:
-        if is_unary(f.first.root):
-            return push_negation_in(eliminate_double_negation(f))
-        else:
-            a, b = f.first.first, f.first.second
+        if is_unary(formula.first.root):
+            return push_negation_in(eliminate_double_negation(formula))
+        else:  # root is unary, and first.root is binary
+            a, b = formula.first.first, formula.first.second
             a, b = Formula('~', a), Formula('~', b)
-            froot = f.first.root
+            froot = formula.first.root
+            new_root = froot
             if froot == '&':
-                froot = '|'
-            else:
-                froot = '&'
-            return Formula(froot, push_negation_in(a), push_negation_in(b))
+                new_root = '|'
+            elif froot == '|':
+                new_root = '&'
+            return Formula(new_root, push_negation_in(a), push_negation_in(b))
 
 
-def eliminate_double_negation(f):
-    root = f.root
+def eliminate_double_negation(formula):
+    root = formula.root
     if is_variable(root) or is_constant(root):
-        return f
+        return formula
     elif is_binary(root):
-        a, b = f.first, f.second
+        a, b = formula.first, formula.second
         return Formula(root, eliminate_double_negation(a), eliminate_double_negation(b))
-    else:
-        if is_unary(f.first.root):
-            return eliminate_double_negation(f.first.first)
+    else:  # root is unary
+        sub_formula = eliminate_double_negation(formula.first)
+        if is_unary(sub_formula.root):  # We have a double negation
+            return sub_formula.first
         else:
-            return Formula('~', eliminate_double_negation(f.first))
+            return Formula('~', sub_formula)
 
 
-def to_cnf_from_nnf(f):
-    root = f.root
+def to_cnf_from_nnf(formula):
+    # ￿TODO: check!
+    root = formula.root
     if is_variable(root) or is_constant(root) or is_unary(root):
-        return f
-    a, b = f.first, f.second
+        return formula
+
+    a, b = formula.first, formula.second
     if root == '&':
         return Formula('&', to_cnf_from_nnf(a), to_cnf_from_nnf(b))
     else:
-        if contains_and(f.first):
-            f = to_cnf_on_left(f)
-        if contains_and(f.second):
-            f = to_cnf_on_right(f)
-        return f
+        if contains_and(formula.first):
+            formula = to_cnf_on_left(formula)
+        if contains_and(formula.second):
+            formula = to_cnf_on_right(formula)
+        return formula
 
 
-def to_cnf_on_left(f):
-    a, b = f.first, f.second
+def to_cnf_on_left(formula):
+    # ￿TODO: check!
+    a, b = formula.first, formula.second
     root = a.root
     if root == '|':
         return to_cnf_from_nnf(Formula('|', to_cnf_from_nnf(a), b))
@@ -116,8 +140,9 @@ def to_cnf_on_left(f):
         return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
 
 
-def to_cnf_on_right(f):
-    a, b = f.first, f.second
+def to_cnf_on_right(formula):
+    # ￿TODO: check!
+    a, b = formula.first, formula.second
     root = b.root
     if root == '|':
         return to_cnf_from_nnf(Formula('|', a, to_cnf_from_nnf(b)))
@@ -128,12 +153,32 @@ def to_cnf_on_right(f):
         return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
 
 
-def contains_and(f):
-    root = f.root
-    if is_variable(root) or is_constant(root) or is_unary(root):
+def contains_and(formula):
+    root = formula.root
+    if is_variable(root) or is_constant(root):
         return False
-    if root == '&':
+    elif is_unary(root):
+        return contains_and(formula.first)
+    elif root == '&':
         return True
     else:
-        return contains_and(f.first) or contains_and(f.second)
+        return contains_and(formula.first) or contains_and(formula.second)
 
+
+# region Tests
+
+
+def test_is_nnf(formula):
+
+    def is_nnf_helper(sub_formula):
+        # Return True iff the sub formula is either not a negation, or a negation of a variable, which is all NNF allows.
+        return not is_unary(sub_formula.root) or is_variable(sub_formula.first.root)
+
+    return assert_on_all_sub_formulae(formula, is_nnf_helper)
+
+
+def test_is_cnf(formula):
+    return True  # TODO: complete!
+
+
+# endregion
