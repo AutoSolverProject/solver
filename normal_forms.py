@@ -172,7 +172,10 @@ def test_is_nnf(formula):
 
     def is_nnf_helper(sub_formula):
         # Return True iff the sub formula is either not a negation, or a negation of a variable, which is all NNF allows.
-        return not is_unary(sub_formula.root) or is_variable(sub_formula.first.root)
+        if is_binary(sub_formula.root):
+            return sub_formula.root == '&' or sub_formula.root == '|'
+        else:
+            return is_literal(sub_formula.first)
 
     return assert_on_all_sub_formulae(formula, is_nnf_helper)
 

@@ -3,64 +3,20 @@ import copy
 from logic_utils import frozen
 from typing import List
 
-
-@frozen
-class CNFVariable:
-
-    def __init__(self, name: str, is_negated: bool):
-        self.name = name
-        self.is_negated = is_negated
-
-
-    def __repr__(self) -> str:
-        return "~" + str(self.name) if self.is_negated else str(self.name)
-
-
-    def __lt__(self, other: object):
-        if not isinstance(other, CNFVariable):
-            return True
-        if self.name == other.name:
-            return self.is_negated and not other.is_negated
-        else:
-            return self.name < other.name
-
-
-    def __le__(self, other: object):
-        return self < other or self == other
-
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, CNFVariable) and str(self) == str(other)
-
-
-    def __ne__(self, other: object) -> bool:
-        return not self == other
-
-
-    def __gt__(self, other):
-        return not self <= other
-
-
-    def __ge__(self, other):
-        return not self < other
-
-
-    def __hash__(self) -> int:
-        return hash(str(self))
+from propositional_logic.semantics import Model
 
 
 @frozen
 class CNFClause:
 
-    def __init__(self, literals: List[CNFVariable]):
-        self.literals = copy.deepcopy(literals)
-        self.literals.sort()
-
-        self.positive_literals = [literal for literal in literals if not literal.is_negated]
+    def __init__(self, positive_literals: List[str] = None, negative_literals: List[str] = None):
+        self.positive_literals = copy.deepcopy(positive_literals) if positive_literals else list()
         self.positive_literals.sort()
 
-        self.negative_literals = [literal for literal in literals if literal.is_negated]
+        self.negative_literals = copy.deepcopy(negative_literals) if negative_literals else list()
         self.negative_literals.sort()
+
+        self.watch_literals = literals[0: max_literal_index]
 
 
     def __repr__(self) -> str:
@@ -81,6 +37,17 @@ class CNFClause:
 
     def __len__(self):
         return len(self.literals)
+
+
+    def get_propagation(self):
+        pass
+
+
+    def update_with_model(self, model: Model):
+        for clause in self.clauses:
+            clause.update_with_model(model)
+
+
 
 
 @frozen
@@ -111,3 +78,8 @@ class CNFFormula:
 
     def __len__(self):
         return len(self.clauses)
+
+
+    def update_with_model(self, model: Model):
+        for clause in self.clauses:
+            clause.update_with_model(model)

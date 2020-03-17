@@ -2,16 +2,19 @@ from cnfformula import *
 from formula_utils import *
 from logic_utils import __prefix_with_index_sequence_generator
 from normal_forms import *
+from propositional_logic.semantics import Model
 from propositional_logic.syntax import *
+from typing import Dict, Tuple
 
 
 # region Tseitin transformation
 
-def tseitin_transformation(propositional_formula):
+def tseitin_transformation(propositional_formula: Formula) -> CNFFormula :
     nnf_formula = to_nnf(propositional_formula)  # Simplifying assumption
     representations = give_representation_to_sub_formulae(nnf_formula)
 
-    first_clause = CNFClause(representations[nnf_formula])
+    p_g = representations[nnf_formula].root
+    first_clause = CNFClause([p_g])
     clauses = [first_clause]
 
     for sub_formula, rep in representations.items():
@@ -28,7 +31,7 @@ def tseitin_transformation(propositional_formula):
     return CNFFormula(clauses)
 
 
-def give_representation_to_sub_formulae(propositional_formula):
+def give_representation_to_sub_formulae(propositional_formula: Formula) -> Dict[Formula, Formula] :
     all_sub_formulae = find_closure(propositional_formula)
     rep_generator = __prefix_with_index_sequence_generator('pg')
     representation = dict()
@@ -43,7 +46,7 @@ def give_representation_to_sub_formulae(propositional_formula):
 
 # region Pre-processing
 
-def preprocess(cnf_formula):
+def preprocess(cnf_formula: CNFFormula) -> CNFFormula :
     new_clauses = list()
 
     for clause in cnf_formula.clauses:
@@ -55,11 +58,11 @@ def preprocess(cnf_formula):
     return CNFFormula(new_clauses)
 
 
-def remove_redundant_literals(cnf_clause):
+def remove_redundant_literals(cnf_clause: CNFClause) -> CNFClause :
     return CNFClause(list(set(cnf_clause.literals)))
 
 
-def is_trivial_clause(cnf_clause):
+def is_trivial_clause(cnf_clause: CNFClause) -> bool :
     positive_set = set(cnf_clause.positive_literals)
     negative_set = set(cnf_clause.negative_literals)
     intersection = positive_set & negative_set
@@ -70,19 +73,12 @@ def is_trivial_clause(cnf_clause):
 
 # region Deduction steps
 
-def deduction_steps():
-    pass
+def deduction_steps(cnf_formula: CNFFormula, partial_model: Model):
+    for clause in cnf_formula.clauses:
 
 
-def unit_propagation():
-    pass
 
-# endregion
-
-
-# region Case splitting
-
-def case_splitting():
+def unit_propagation(cnf_formula: CNFFormula, partial_model: Model) -> Model :
     pass
 
 # endregion
@@ -109,12 +105,12 @@ def learn_conflict_clauses():
 def decision_heuristic():
     pass
 
-# endregion
+
+def dlis():
+    pass
 
 
-# region Watch literals
-
-def watch_literals():
+def vsids():
     pass
 
 # endregion
