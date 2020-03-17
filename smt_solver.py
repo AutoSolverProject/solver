@@ -5,7 +5,6 @@ from disjoint_set_tree import *
 
 
 def solver(formula):
-    model = get_model(formula)
     skeleton, sub_map = formula.propositional_skeleton()
     partial_assignment = TOMER_get_assignment(skeleton)
     still_searching = True
