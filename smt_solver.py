@@ -6,7 +6,7 @@ from disjoint_set_tree import *
 
 def solver(formula):
     skeleton, sub_map = formula.propositional_skeleton()
-    partial_assignment = sat_solver(skeleton)
+    state, partial_assignment = sat_solver(skeleton)
     still_searching = True
     while still_searching:
 
@@ -21,6 +21,10 @@ def solver(formula):
                 conflict = get_conflict(assignment)
                 partial_assignment = sat_solver(skeleton, partial_model=partial_assignment, conflict=conflict)
             else:
+                assignment = t_propagate(assignment, formula)
+                for k, v in sub_map.items():
+                    if assignment[v]:
+                        partial_assignment[k] = True
                 partial_assignment = sat_solver(skeleton, partial_model=partial_assignment)
 
 
@@ -32,7 +36,7 @@ def assign_in_formula(partial_assignment, sub_map):
 
 
 def check_congruence_closure(assignment, formula):
-    subterms = get_subterms(formula)
+    subterms = sort_by_length(get_subterms(formula))
     disjoint_set = make_set(subterms)
     equalities = get_equalities(assignment)
     inequalities = get_inequalities(assignment)
@@ -44,6 +48,22 @@ def check_congruence_closure(assignment, formula):
         if find(node1) == find(node2):
             return False
     return True
+
+
+def t_propagate(assignment, formula):
+    subterms = sort_by_length(get_subterms(formula))
+    disjoint_set = make_set(subterms)
+    unassigned_equalities = get_equalities_in_formula(formula)
+    equalities = get_equalities(assignment)
+    for equality in equalities:
+        node1, node2 = get_nodes(equality, disjoint_set)
+        union(node1, node2)
+    for equality in unassigned_equalities:
+        args = equality.arguments
+        left, right = args[0], args[1]
+        if find(left) == find(right):
+            assignment[equality] = True
+    return assignment
 
 
 def get_conflict(assignment):
@@ -67,10 +87,25 @@ def get_conflict(assignment):
 
 def get_subterms(formula):
     if is_equality(formula.root):
-        return {formula.arguments[0], formula.arguments[1]}
+        return get_subterms_in_term(formula.arguments[0]).union(get_subterms_in_term(formula.arguments[1]))
     elif is_unary(formula.root):
         return get_subterms(formula.first)
     return get_subterms(formula.first) | get_subterms(formula.second)
+
+
+def get_subterms_in_term(term):
+    if is_function(term.root):
+        subs = {term}
+        for arg in term.arguments:
+            subs.update(get_subterms_in_term(arg))
+        return subs
+    return {term}
+
+
+def sort_by_length(subterms):
+    subterms = list(subterms)
+    subterms = sorted(subterms)
+    return set(subterms)
 
 
 def get_equalities(assignment):
@@ -90,7 +125,13 @@ def get_inequalities(assignment):
 
 
 def make_set(subterms):
-    return {Node(term) for term in subterms}
+    nodes = dict()
+    for term in subterms:
+        nodes[term] = (Node(term))
+        if is_function(term.root):
+            for arg in term.arguments:
+                nodes[arg].parent = nodes[term]
+    return nodes.values()
 
 
 def find(term):
@@ -145,3 +186,8 @@ def get_primitives_in_term(term):
         return primitives
     else:
         return set()
+
+if __name__ == '__main__':
+    formula = Formula.parse('((f(a,c)=b&f(a,g(b))=b)|~c=g(b))')
+    subs = get_subterms(formula)
+    sort_by_length(subs)

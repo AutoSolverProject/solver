@@ -49,7 +49,7 @@ def is_variable(s: str) -> bool:
     Returns:
         ``True`` if the given string is a variable name, ``False`` otherwise.
     """
-    return s[0] >= 'u' and s[0] <= 'z' and s.isalnum()
+    return 'u' <= s[0] <= 'z' and s.isalnum()
 
 def is_function(s: str) -> bool:
     """Checks if the given string is a function name.
@@ -60,7 +60,7 @@ def is_function(s: str) -> bool:
     Returns:
         ``True`` if the given string is a function name, ``False`` otherwise.
     """
-    return s[0] >= 'f' and s[0] <= 't' and s.isalnum()
+    return 'f' <= s[0] <= 't' and s.isalnum()
 
 @frozen
 class Term:
@@ -121,6 +121,9 @@ class Term:
             current term, ``False`` otherwise.
         """
         return isinstance(other, Term) and str(self) == str(other)
+
+    def __lt__(self, other):
+        return len(str(self)) < len(str(other))
         
     def __ne__(self, other: object) -> bool:
         """Compares the current term with the given one.
