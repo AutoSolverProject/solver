@@ -98,10 +98,10 @@ def to_cnf(formula, debug=normal_forms_DEBUG):
 
         if is_unary(in_nnf_form.root):  # in_nnf_form is in nnf form, so it must be a literal
             in_cnf_form = in_nnf_form
-        elif not contains_and(formula):  # in_nnf_form is in nnf form, so if it has no "AND" it's just on clause
+        elif not contains_and(formula):  # in_nnf_form is in nnf form, so if it has no "AND" it's just a clause
             in_cnf_form = in_nnf_form
         else:
-            in_cnf_form = to_cnf_from_nnf(formula)
+            in_cnf_form = to_cnf_from_nnf(in_nnf_form)
 
     if debug:
         assert test_is_cnf(in_cnf_form)
@@ -117,36 +117,33 @@ def to_cnf_from_nnf(in_nnf_form):
         return Formula('&', to_cnf_from_nnf(in_nnf_form.first), to_cnf_from_nnf(in_nnf_form.second))
     else:  # in_nnf_form.root == '|'
         if contains_and(in_nnf_form.first):
-            in_nnf_form = to_cnf_on_left(in_nnf_form)
-        if contains_and(in_nnf_form.second):
-            in_nnf_form = to_cnf_on_right(in_nnf_form)
-        return in_nnf_form
+            return to_cnf_on_left(in_nnf_form)
+        else:  # contains "AND" in in_nnf_form.second
+            return to_cnf_on_right(in_nnf_form)
 
 
 def to_cnf_on_left(formula):
     # ￿TODO: check!
     a, b = formula.first, formula.second
-    root = a.root
-    if root == '|':
-        return to_cnf_from_nnf(Formula('|', to_cnf_from_nnf(a), b))
-    else:
-        c, d = a.first, a.second
-        first = Formula('|', c, b)
-        second = Formula('|', d, b)
-        return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
+    a = to_cnf_from_nnf(a)
+    c, d = a.first, a.second
+    first = Formula('|', c, b)
+    second = Formula('|', d, b)
+    return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
 
 
 def to_cnf_on_right(formula):
     # ￿TODO: check!
     a, b = formula.first, formula.second
-    root = b.root
-    if root == '|':
-        return to_cnf_from_nnf(Formula('|', a, to_cnf_from_nnf(b)))
-    else:
-        c, d = b.first, b.second
-        first = Formula('|', a, c)
-        second = Formula('|', a, d)
-        return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
+    b = to_cnf_from_nnf(b)
+    c, d = b.first, b.second
+    first = Formula('|', a, c)
+    second = Formula('|', a, d)
+    if contains_and(c):
+        first = to_cnf_on_right(first)
+    if contains_and(d):
+        second = to_cnf_on_right(second)
+    return Formula('&', first, second)
 
 
 def contains_and(formula):
