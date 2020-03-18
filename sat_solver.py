@@ -103,19 +103,28 @@ def DLIS():
 
 
 def decide(cnf_formula, partial_model, decision_heuristic=DLIS):
-    cnf_formula.update_with_model(partial_model)
-
     sat_value = sat_solver_UNKNOWN
-    new_partial_model = partial_model
+    levels = [partial_model]
 
-    while sat_value == sat_solver_UNKNOWN:
-        sat_value, new_partial_model = BCP(cnf_formula, partial_model)
+    while True:
+        sat_value, partial_models_until_current_level = BCP(cnf_formula, partial_models_until_current_level)
+        if sat_value != sat_solver_UNKNOWN:
+            return sat_value, partial_models_until_current_level
 
-    return sat_value, new_partial_model
+        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, partial_models_until_current_level)
+        partial_models_until_current_level[-1][chosen_variable] = chosen_assignment
 
 
 
 def BCP(cnf_formula, partial_model):
+    """
+    Gets a formula and a model. Deducts all it can about the model.
+    If during it finds the formula SAT - Returns.
+    If during it finds the formula UNSAT -
+            If on level 0 - returns UNSAT.
+            Else - analyzes conflict and adds clause; finds when to backjump and backjumps; Returns UNKNOWN.
+    Else - Returns UNKNOWN.
+    """
 
     if cnf_formula.isSAT():
         return sat_solver_SAT, partial_model
@@ -129,7 +138,9 @@ def BCP(cnf_formula, partial_model):
 
 
 def analyze_conflict():
-    pass
+    # find clause to add ; find level to jump back to
+    a = 5
+
 
 
 
