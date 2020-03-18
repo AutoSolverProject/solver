@@ -10,8 +10,8 @@ def solver(formula):
     still_searching = True
     while still_searching:
 
-        if partial_assignment == "UNSAT":
-            return "UNSAT"
+        if partial_assignment == UNSAT:
+            return UNSAT
         else:
             assignment = assign_in_formula(partial_assignment, sub_map)
             cc_value = check_congruence_closure(assignment, formula)

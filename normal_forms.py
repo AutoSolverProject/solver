@@ -174,7 +174,7 @@ def test_is_nnf(formula):
 
 
 def test_is_cnf(formula):
-    return True  # TODO: complete!
+    return True  # TODO: implement!
 
 
 # endregion

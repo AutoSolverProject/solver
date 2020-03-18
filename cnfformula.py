@@ -1,8 +1,9 @@
 import copy
 import math
 
+from formula_utils import *
 from logic_utils import frozen
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from propositional_logic.semantics import Model
 
@@ -17,7 +18,7 @@ class CNFClause:
         self.negative_literals = copy.deepcopy(negative_literals) if negative_literals else list()
         self.negative_literals.sort()
 
-        self.watch_literals = get_watch_literals(dict())
+        self.watch_literals = self.find_watch_literals(dict())
 
 
     def __repr__(self) -> str:
@@ -48,11 +49,28 @@ class CNFClause:
 
 
     def update_with_model(self, model: Model):
-        pass  # TODO: complete!
+
+        # Check if any watch literal was assigned, and only if so bother to check if can deduce an assignment
+        for watch_literal, watch_literal_sign in self.watch_literals:
+            if watch_literal not in model.keys():
+                continue
+            elif (model[watch_literal] == True and watch_literal_sign == False) \
+                    or (model[watch_literal] == False and watch_literal_sign == True):
+                self.watch_literals = self.find_watch_literals(model)
+
+        if len(self.watch_literals) == 1:
+            return {self.watch_literals[0]: self.watch_literals[1]}
+        break
 
 
-    def get_watch_literals(self, model):
-        pass  # TODO: complete!
+
+
+
+
+
+
+    def find_watch_literals(self, model: Model) -> str:
+        pass  # TODO: implement!
 
 
 @frozen
@@ -162,7 +180,7 @@ class ImplicationGraph:
         assert self.curr_level >= 1
 
         last_decision_variable = list(self.decision_variables[-1].keys())[0]
-        potential_uips = copy.deepcopy(self.all_variables)
+        potential_uips = set(copy.deepcopy(self.total_model.keys()))
         potential_uips_distances = {potential_uip: math.inf for potential_uip in potential_uips}
         current_path = list()
 
@@ -179,7 +197,7 @@ class ImplicationGraph:
 
             else:
                 current_path.add(current_node)
-                for child in my_children:
+                for child in my_children:  # Todo: implement!
                     dfs_helper(child)
                 current_path.pop()
 
