@@ -17,27 +17,6 @@ def to_nnf(formula, debug=normal_forms_DEBUG):
     return eliminated_double_negation
 
 
-def to_cnf(formula, debug=normal_forms_DEBUG):
-    root = formula.root
-    if is_variable(root) or is_constant(root):
-        in_cnf_form = formula
-
-    else:
-        in_nnf_form = to_nnf(formula)
-
-        if is_unary(in_nnf_form.root):  # in_nnf_form.first in either a variable or a constant
-            in_cnf_form = in_nnf_form
-        elif not contains_and(formula):
-            in_cnf_form = in_nnf_form
-        else:
-            in_cnf_form = to_cnf_from_nnf(formula)
-
-    if debug:
-        assert test_is_cnf(in_cnf_form)
-
-    return in_cnf_form
-
-
 def eliminate_iffs(formula):
     root = formula.root
     if is_variable(root) or is_constant(root):
@@ -110,21 +89,38 @@ def eliminate_double_negation(formula):
             return Formula('~', sub_formula)
 
 
-def to_cnf_from_nnf(formula):
-    # ￿TODO: check!
-    root = formula.root
-    if is_variable(root) or is_constant(root) or is_unary(root):
-        return formula
+def to_cnf(formula, debug=normal_forms_DEBUG):
+    if is_literal(formula):
+        in_cnf_form = formula
 
-    a, b = formula.first, formula.second
-    if root == '&':
-        return Formula('&', to_cnf_from_nnf(a), to_cnf_from_nnf(b))
     else:
-        if contains_and(formula.first):
-            formula = to_cnf_on_left(formula)
-        if contains_and(formula.second):
-            formula = to_cnf_on_right(formula)
-        return formula
+        in_nnf_form = to_nnf(formula, debug=debug)
+
+        if is_unary(in_nnf_form.root):  # in_nnf_form is in nnf form, so it must be a literal
+            in_cnf_form = in_nnf_form
+        elif not contains_and(formula):  # in_nnf_form is in nnf form, so if it has no "AND" it's just on clause
+            in_cnf_form = in_nnf_form
+        else:
+            in_cnf_form = to_cnf_from_nnf(formula)
+
+    if debug:
+        assert test_is_cnf(in_cnf_form)
+
+    return in_cnf_form
+
+
+def to_cnf_from_nnf(in_nnf_form):
+    if is_literal(in_nnf_form):
+        return in_nnf_form
+
+    if in_nnf_form.root == '&':
+        return Formula('&', to_cnf_from_nnf(in_nnf_form.first), to_cnf_from_nnf(in_nnf_form.second))
+    else:  # in_nnf_form.root == '|'
+        if contains_and(in_nnf_form.first):
+            in_nnf_form = to_cnf_on_left(in_nnf_form)
+        if contains_and(in_nnf_form.second):
+            in_nnf_form = to_cnf_on_right(in_nnf_form)
+        return in_nnf_form
 
 
 def to_cnf_on_left(formula):

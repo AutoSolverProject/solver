@@ -16,15 +16,22 @@ class CNFClause:
         self.negative_literals = copy.deepcopy(negative_literals) if negative_literals else list()
         self.negative_literals.sort()
 
-        self.watch_literals = literals[0: max_literal_index]
+        self.watch_literals = get_watch_literals(dict())
 
 
     def __repr__(self) -> str:
-        return self.literals.__repr__()
+        my_repr = ""
+        for pos in self.positive_literals:
+            my_repr += str(pos) + " "
+
+        for neg in self.negative_literals:
+            my_repr += "~" + str(neg) + " "
 
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, CNFClause) and self.literals == other.literals
+        return isinstance(other, CNFClause) \
+               and self.positive_literals == other.positive_literals \
+               and self.negative_literals == other.negative_literals
 
 
     def __ne__(self, other: object) -> bool:
@@ -36,11 +43,7 @@ class CNFClause:
 
 
     def __len__(self):
-        return len(self.literals)
-
-
-    def get_propagation(self):
-        pass
+        return len(self.positive_literals) + len(self.negative_literals)
 
 
     def update_with_model(self, model: Model):
@@ -48,6 +51,8 @@ class CNFClause:
             clause.update_with_model(model)
 
 
+    def get_watch_literals(self, model):
+        pass
 
 
 @frozen
@@ -58,10 +63,7 @@ class CNFFormula:
 
 
     def __repr__(self) -> str:
-        my_repr = ""
-        for i in range(len(self.clauses)):
-            my_repr += str(i) + self.clauses[i].__repr__() + "\n"
-        return my_repr
+        return self.clauses.__repr__()
 
 
     def __eq__(self, other: object) -> bool:
