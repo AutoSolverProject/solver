@@ -2,6 +2,13 @@ from cnfformula import CNFFormula, CNFClause
 from propositional_logic.syntax import *
 
 
+UNSAT = "UNSAT"
+
+SAT = "SAT"
+
+SAT_UNKNOWN = "UNKNOWN"
+
+
 def find_closure(formula):
 
     closure = set()
@@ -52,3 +59,5 @@ def parse_CNFFormula(formula_str) -> CNFFormula:
         clauses.append(new_clause)
 
     return CNFFormula(clauses)
+
+

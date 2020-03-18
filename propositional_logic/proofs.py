@@ -476,7 +476,7 @@ def inline_proof_once(main_proof: Proof, line_number: int, lemma_proof: Proof) \
     # Task 5.2a
     special_lemma_proof = prove_specialization(lemma_proof, main_proof.rule_for_line(line_number))
 
-    # here we start to build the components of the new proof
+    # her we start to build the components of the new proof
     new_rules = main_proof.rules.union(special_lemma_proof.rules)
     new_lines = []
     fill_lemma_lines(main_proof, new_lines, special_lemma_proof, line_number)

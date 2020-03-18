@@ -90,10 +90,7 @@ def get_inequalities(assignment):
 
 
 def make_set(subterms):
-    disjoint_sets = set()
-    for term in subterms:
-        disjoint_sets.add(Node(term))
-    return disjoint_sets
+    return {Node(term) for term in subterms}
 
 
 def find(term):

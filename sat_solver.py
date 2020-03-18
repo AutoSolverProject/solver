@@ -1,17 +1,8 @@
 from cnfformula import *
-from formula_utils import *
 from logic_utils import __prefix_with_index_sequence_generator
 from normal_forms import *
-from propositional_logic.semantics import Model
 from propositional_logic.syntax import *
 from typing import Dict, Tuple
-
-
-sat_solver_UNSAT = "UNSAT"
-
-sat_solver_SAT = "SAT"
-
-sat_solver_UNKNOWN = "UNKNOWN"
 
 
 def sat_solver(formula, partial_model=None, conflict=None):
@@ -23,10 +14,10 @@ def sat_solver(formula, partial_model=None, conflict=None):
     cnf_formula = preprocess(formula)
 
     if len(cnf_formula.clauses) == 0:
-        return sat_solver_SAT
+        return SAT
     for clause in cnf_formula.clauses:
         if len(clause) == 0:
-            return sat_solver_UNSAT
+            return UNSAT
 
     return decide(cnf_formula, partial_model)
 
@@ -99,24 +90,23 @@ def give_representation_to_sub_formulae(propositional_formula: Formula) -> Dict[
 
 
 def DLIS(cnf_formula, model) -> Tuple[str, bool]:
-    pass
+    pass  # TODO: complete!
 
 
 def decide(cnf_formula, partial_model, decision_heuristic=DLIS):
-    implication_graph = ImplicationGraph([dict()], [partial_model])
+    implication_graph = ImplicationGraph(partial_model)
 
     while True:
         sat_value, new_implication_graph = BCP(cnf_formula, implication_graph)
-        if sat_value != sat_solver_UNKNOWN:
-            return sat_value, new_implication_graph.get_total_model()
-
-        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, new_implication_graph.get_total_model())
         implication_graph = new_implication_graph
+        if sat_value != SAT_UNKNOWN:
+            return sat_value, implication_graph.get_total_model()
+
+        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
         implication_graph.add_decision(chosen_variable, chosen_assignment)
 
 
-
-def BCP(cnf_formula, implication_graph):
+def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
     """
     Gets a formula and a model. Deducts all it can about the model.
     If during it finds the formula SAT - Returns.
@@ -126,20 +116,45 @@ def BCP(cnf_formula, implication_graph):
     Else - Returns UNKNOWN.
     """
 
-    if cnf_formula.isSAT():
-        return sat_solver_SAT, partial_model
+    is_sat = True
+    inferred_assignment = None
 
-    if sat_value == sat_solver_UNSAT:
-        return sat_solver_UNSAT, new_partial_model
+    for clause in cnf_formula.clauses:
+        result = clause.update_with_model(implication_graph.get_total_model())
+        if result == SAT:
+            continue
+        elif result == UNSAT:
+            if implication_graph.curr_level == 0:
+                return UNSAT, implication_graph
 
-    implication_graph = None
-    for literal, assignment in partial_model:
-        implication_graph.add_literal_assignment(literal, assignment)
+            is_sat = False
+            analyze_conflict(cnf_formula, implication_graph)
+
+        elif result == SAT_UNKNOWN:
+            is_sat = False
+            continue
+        else:  # result is a inferred assignment
+            is_sat = False
+            inferred_assignment = result
+
+    if is_sat:
+        return SAT, implication_graph
+
+    if inferred_assignment is not None:
+        variable = inferred_assignment[0]
+        assignment = inferred_assignment[1]
+        implication_graph.add_inference(variable, assignment)
+        return BCP(cnf_formula, implication_graph)
 
 
-def analyze_conflict():
+
+def analyze_conflict(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
     # find clause to add ; find level to jump back to
-    a = 5
+    uip = implication_graph.find_uip()
+
+    conflict_clause = implication_graph.conflict_clause
+    clause = implication_graph.
+
 
 
 

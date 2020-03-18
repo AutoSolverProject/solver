@@ -48,12 +48,11 @@ class CNFClause:
 
 
     def update_with_model(self, model: Model):
-        for clause in self.clauses:
-            clause.update_with_model(model)
+        pass  # TODO: complete!
 
 
     def get_watch_literals(self, model):
-        pass
+        pass  # TODO: complete!
 
 
 @frozen
