@@ -90,17 +90,14 @@ class CNFFormula:
 
 class ImplicationGraph:
 
-    def __init__(self, decision_variables: List[Dict[str, bool]], inferred_variables: List[Dict[str, bool]]):
-        assert len(inferred_variables) == len(decision_variables)
-        self.all_variables = set()  # TODO: fill
-        assert len(
-            set(decision_variables.keys()).intersection(set(inferred_variables.keys()))) == 0
+    def __init__(self, decided_variables: Dict[str, bool] = None):
+        decided_variables = copy.deepcopy(decided_variables) if decided_variables is not None else dict()
 
-        self.decision_variables = copy.deepcopy(decision_variables)
-        self.inferred_variables = copy.deepcopy(inferred_variables)
-        self.curr_level = len(self.decision_variables) - 1  # Minus 1 because the first level doesn't involve deciding
-
-        self.conflict = None
+        self.curr_level = 0
+        self.conflict_clause = None
+        self.decision_variables = [decided_variables]
+        self.inferred_variables = [dict()]
+        self.total_model = decided_variables
 
 
     def __repr__(self) -> str:
@@ -115,7 +112,8 @@ class ImplicationGraph:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, ImplicationGraph) \
                and self.decision_variables == other.decision_variables \
-               and self.inferred_variables == other.inferred_variables
+               and self.inferred_variables == other.inferred_variables \
+               and self.curr_level == other.curr_level
 
 
     def __ne__(self, other: object) -> bool:
@@ -127,23 +125,41 @@ class ImplicationGraph:
 
 
     def __len__(self):
-        return len(self.decision_variables)
+        return self.curr_level
 
 
     def backjump_to_level(self, new_level):
         assert 0 <= new_level <= self.curr_level
+
         self.curr_level = new_level
+        self.conflict_clause = None
         self.decision_variables = self.decision_variables[:self.curr_level + 1]
         self.inferred_variables = self.inferred_variables[:self.curr_level + 1]
 
+        self.total_model = dict()
+        for i in range(self.curr_level):
+            self.total_model.update(self.decision_variables[i])
+            self.total_model.update(self.inferred_variables[i])
+
 
     def add_inference(self, variable, assignment):
-        assert variable not in self.all_variables
+        assert variable not in self.total_model.keys()
+
         self.inferred_variables[-1][variable] = assignment
+        self.total_model[variable] = assignment
+
+
+    def add_decision(self, variable, assignment):
+        assert variable not in self.total_model.keys()
+
+        self.curr_level += 1
+        self.decision_variables.append({variable: assignment})
+        self.inferred_variables.append(dict())
+        self.total_model[variable] = assignment
 
 
     def find_uip(self):
-        assert self.conflict is not None
+        assert self.conflict_clause is not None
         assert self.curr_level >= 1
 
         last_decision_variable = list(self.decision_variables[-1].keys())[0]
@@ -154,7 +170,7 @@ class ImplicationGraph:
         def dfs_helper(current_node):  # Finds all uips we must go through and their min distances from the conflict
             nonlocal potential_uips, potential_uips_distances
 
-            if current_node == self.conflict:
+            if current_node == self.conflict_clause:
                 potential_uips = potential_uips.intesect(set(current_path))
                 for node_index in range(len(current_path)):
                     curr_node = current_path[node_index]
@@ -179,3 +195,7 @@ class ImplicationGraph:
                 closest_uip_dist = potential_uips_distances[closest_uip]
 
         return closest_uip
+
+
+    def get_total_model(self) -> Model:
+        return self.total_model

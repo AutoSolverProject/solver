@@ -98,25 +98,25 @@ def give_representation_to_sub_formulae(propositional_formula: Formula) -> Dict[
 # endregion
 
 
-def DLIS():
+def DLIS(cnf_formula, model) -> Tuple[str, bool]:
     pass
 
 
 def decide(cnf_formula, partial_model, decision_heuristic=DLIS):
-    sat_value = sat_solver_UNKNOWN
-    levels = [partial_model]
+    implication_graph = ImplicationGraph([dict()], [partial_model])
 
     while True:
-        sat_value, partial_models_until_current_level = BCP(cnf_formula, partial_models_until_current_level)
+        sat_value, new_implication_graph = BCP(cnf_formula, implication_graph)
         if sat_value != sat_solver_UNKNOWN:
-            return sat_value, partial_models_until_current_level
+            return sat_value, new_implication_graph.get_total_model()
 
-        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, partial_models_until_current_level)
-        partial_models_until_current_level[-1][chosen_variable] = chosen_assignment
+        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, new_implication_graph.get_total_model())
+        implication_graph = new_implication_graph
+        implication_graph.add_decision(chosen_variable, chosen_assignment)
 
 
 
-def BCP(cnf_formula, partial_model):
+def BCP(cnf_formula, implication_graph):
     """
     Gets a formula and a model. Deducts all it can about the model.
     If during it finds the formula SAT - Returns.
