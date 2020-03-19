@@ -95,7 +95,9 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
     candidates = cnf_formula.all_variables - set(model.keys())  # Starting with all unassigned variables
 
     best_candidate = None
+    best_candidate_assignment = None
     best_candidate_score = 0
+
     for candidate in candidates:
         cur_candidate_score =
 
