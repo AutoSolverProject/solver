@@ -105,12 +105,11 @@ def get_subterms(formula):
 
 
 def get_subterms_in_term(term):
+    subs = {term}
     if is_function(term.root):
-        subs = {term}
         for arg in term.arguments:
             subs.update(get_subterms_in_term(arg))
-        return subs
-    return {term}
+    return subs
 
 
 def sort_by_length(subterms):

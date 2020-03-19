@@ -1,5 +1,5 @@
 from propositional_logic.syntax import *
-from test_utils import *
+from utils.test_utils import *
 
 
 normal_forms_DEBUG = test_utils_DEBUG

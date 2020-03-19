@@ -1,9 +1,9 @@
 import copy
 import math
 
-from formula_utils import *
+from utils.formula_utils import *
 from logic_utils import frozen
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 from propositional_logic.semantics import Model
 
