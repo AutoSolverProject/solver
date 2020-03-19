@@ -4,13 +4,13 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from disjoint_set_tree import *
 
 
-def smt_solver(formula) -> Tuple[str, Model]:
+def smt_solver(formula) -> Tuple[str, Model, Formula]:
     skeleton, substitution_map = formula.propositional_skeleton()
     state = SAT_UNKNOWN
     partial_assignment = Model()
 
     while state == SAT_UNKNOWN:
-        state, partial_assignment = sat_solver(skeleton)
+        state, partial_assignment, TOMER_new_formula = sat_solver(skeleton)
 
         assignment = assign_in_formula(partial_assignment, substitution_map)
         cc_value = check_congruence_closure(assignment, formula)
@@ -18,15 +18,15 @@ def smt_solver(formula) -> Tuple[str, Model]:
             return SAT, assignment
         elif not cc_value:
             conflict = get_conflict(assignment)
-            partial_assignment = sat_solver(skeleton, partial_model=partial_assignment, conflict=conflict)
+            state, partial_assignment, TOMER_new_formula = sat_solver(skeleton, partial_model=partial_assignment, conflict=conflict)
         else:
             assignment = t_propagate(assignment, formula)
             for k, v in substitution_map.items():
                 if v in assignment.keys() and assignment[v]:
                     partial_assignment[k] = True
-            partial_assignment = sat_solver(skeleton, partial_model=partial_assignment)
+            state, partial_assignment, TOMER_new_formula = sat_solver(skeleton, partial_model=partial_assignment)
 
-    return state, partial_assignment
+    return state, partial_assignment, TOMER_new_formula
 
 
 def assign_in_formula(partial_assignment, sub_map):

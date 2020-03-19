@@ -1,15 +1,15 @@
 from cnfformula import *
 from logic_utils import __prefix_with_index_sequence_generator
 from normal_forms import *
-from propositional_logic.syntax import *
+from propositional_logic.syntax import Formula as PropositionalFormula
 from typing import Dict, Tuple
 
 
-def sat_solver(formula, partial_model=None, conflict=None) -> Tuple[str, Model]:
+def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_rounds=1) -> Tuple[str, Model, PropositionalFormula]:
     if partial_model is None:
         partial_model = Model()
 
-    cnf_formula = preprocess(formula)
+    cnf_formula = preprocess(propositional_formula)
 
     if conflict is not None:
         assert test_is_cnf(conflict)
@@ -24,13 +24,15 @@ def sat_solver(formula, partial_model=None, conflict=None) -> Tuple[str, Model]:
         if len(clause) == 0:
             return UNSAT
 
-    return decide(cnf_formula, partial_model)
+    result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_decision_rounds=max_decision_rounds)
+    equisatisfiable_PropositionalFormula = equisatisfiable_CNFFormula.to_PropositionalFormula()
+    return result, model, equisatisfiable_PropositionalFormula
 
 
 # region Pre-processing
 
-def preprocess(formula: Formula) -> CNFFormula:
-    cnf_formula = tseitin_transformation(formula)
+def preprocess(propositional_formula: PropositionalFormula) -> CNFFormula:
+    cnf_formula = tseitin_transformation(propositional_formula)
 
     new_clauses = list()
 
@@ -56,7 +58,7 @@ def is_trivial_clause(cnf_clause: CNFClause) -> bool:
 
 # region Tseitin transformation
 
-def tseitin_transformation(propositional_formula: Formula) -> CNFFormula:
+def tseitin_transformation(propositional_formula: PropositionalFormula) -> CNFFormula:
     nnf_formula = to_nnf(propositional_formula)  # Simplifying assumption - no cases like: ~~~~~~~~~p<->q
     representations = give_representation_to_sub_formulae(nnf_formula)
 
@@ -70,8 +72,8 @@ def tseitin_transformation(propositional_formula: Formula) -> CNFFormula:
 
         first_repped = representations[sub_formula.first]
         second_repped = representations[sub_formula.second]
-        sub_formula_repped = Formula(sub_formula.root, first_repped, second_repped)
-        binding_formula = Formula('<->', rep, sub_formula_repped)
+        sub_formula_repped = PropositionalFormula(sub_formula.root, first_repped, second_repped)
+        binding_formula = PropositionalFormula('<->', rep, sub_formula_repped)
         binding_formula_in_cnf_form = to_cnf(binding_formula)
         binding_CNFFormula = propositional_formula_to_CNFFormula(binding_formula_in_cnf_form)
         clauses += binding_CNFFormula.clauses
@@ -79,13 +81,13 @@ def tseitin_transformation(propositional_formula: Formula) -> CNFFormula:
     return CNFFormula(clauses)
 
 
-def give_representation_to_sub_formulae(propositional_formula: Formula) -> Dict[Formula, Formula]:
+def give_representation_to_sub_formulae(propositional_formula: PropositionalFormula) -> Dict[PropositionalFormula, PropositionalFormula]:
     all_sub_formulae = find_closure(propositional_formula)
     rep_generator = __prefix_with_index_sequence_generator('pg')
     representation = dict()
 
     for sub_formula in all_sub_formulae:
-        representation[sub_formula] = sub_formula if is_literal(sub_formula) else Formula(next(rep_generator))
+        representation[sub_formula] = sub_formula if is_literal(sub_formula) else PropositionalFormula(next(rep_generator))
 
     return representation
 
@@ -118,34 +120,42 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
     return best_candidate, best_candidate_assignment
 
 
-def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_rounds: int = 1, decision_heuristic=DLIS) -> Tuple[str, Model]:
+def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_rounds: int = 1, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
     implication_graph = ImplicationGraph(dict(partial_model))
 
+    prev_implication_graph = implication_graph
+    sat_value, implication_graph = BCP(cnf_formula, prev_implication_graph)
+
+    # Propagate all before any decision:
+    if sat_value == SAT:
+        return sat_value, implication_graph.get_total_model(), cnf_formula
+    elif sat_value == UNSAT:
+        return UNSAT, implication_graph.get_total_model(), cnf_formula
+
     curr_decision_round = 0
-    while curr_decision_round <= max_decision_rounds:
+    while curr_decision_round < max_decision_rounds:
         curr_decision_round += 1
         prev_implication_graph = implication_graph
+
+        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
+        assert chosen_variable != UNSAT
+        assert chosen_assignment != UNSAT
+        implication_graph.add_decision(chosen_variable, chosen_assignment)
 
         sat_value, implication_graph = BCP(cnf_formula, prev_implication_graph)
 
         if sat_value == SAT:
-            return sat_value, implication_graph.get_total_model()
+            return sat_value, implication_graph.get_total_model(), cnf_formula
 
         elif sat_value == UNSAT:
             if implication_graph.curr_level == 0:
-                return UNSAT, implication_graph.get_total_model()
+                return UNSAT, implication_graph.get_total_model(), cnf_formula
             else:
                 backjump_level, conflict_clause = analyze_conflict(cnf_formula, implication_graph)
                 implication_graph.backjump_to_level(backjump_level)
                 cnf_formula.add_clause(conflict_clause)
 
-        #  TODO: when curr_decision_round == max_decision_rounds put values to return from outside the while
-
-        elif sat_value == SAT_UNKNOWN:
-            chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
-            assert chosen_variable != UNSAT
-            assert chosen_assignment != UNSAT
-            implication_graph.add_decision(chosen_variable, chosen_assignment)
+    return sat_value, implication_graph.get_total_model(), cnf_formula
 
 
 def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
@@ -154,20 +164,17 @@ def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
 
     for clause in cnf_formula.clauses:
         result = clause.update_with_model(implication_graph.get_total_model())
+        if result == UNSAT:
+            return UNSAT, implication_graph
         if result == SAT:
             continue
         elif result == SAT_UNKNOWN:
             is_sat = False
-            continue
-        elif result == UNSAT:
-            is_sat = False
-            return  # TODO: ?
-
-        else:  # result is a inferred assignment
+        else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT, even if that means overwriting inferred_assignment
             is_sat = False
             inferred_assignment = result
 
-    if is_sat:
+    if is_sat:  # All clauses are SAT, and therefore also the entire formula
         return SAT, implication_graph
 
     if inferred_assignment is not None:

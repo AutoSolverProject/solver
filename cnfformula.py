@@ -4,7 +4,7 @@ import math
 from utils.formula_utils import *
 from logic_utils import frozen
 from typing import List, Dict
-
+from propositional_logic.syntax import Formula as PropositionalFormula
 from propositional_logic.semantics import Model
 
 
@@ -22,12 +22,27 @@ class CNFClause:
 
 
     def __repr__(self) -> str:
-        my_repr = ""
-        for pos in self.positive_literals:
-            my_repr += str(pos) + " "
+        if len(self) == 0:
+            return "F"
 
-        for neg in self.negative_literals:
-            my_repr += "~" + str(neg) + " "
+        my_repr = "(" * (len(self) - 1)
+        first_pos = 0
+        first_neg = 0
+
+        if len(self.positive_literals) > 0:
+            my_repr += str(self.positive_literals[0])
+            first_pos = 1
+        else:
+            my_repr += "~" + str(self.negative_literals[0])
+            first_neg = 1
+
+        for pos_index in range(first_pos, len(self.positive_literals)):
+            my_repr += "|" + str(self.positive_literals[pos_index]) + ")"
+
+        for neg_index in range(first_neg, len(self.negative_literals)):
+            my_repr += "|" + "~" + str(self.negative_literals[neg_index]) + ")"
+
+        return my_repr
 
 
     def __eq__(self, other: object) -> bool:
@@ -46,6 +61,10 @@ class CNFClause:
 
     def __len__(self):
         return len(self.positive_literals) + len(self.negative_literals)
+
+
+    def to_PropositionalFormula(self) -> PropositionalFormula:
+        return PropositionalFormula.parse(str(self))
 
 
     def update_with_model(self, model: Model):
@@ -97,7 +116,16 @@ class CNFFormula:
 
 
     def __repr__(self) -> str:
-        return self.clauses.__repr__()
+        if len(self.clauses) == 0:
+            return "T"
+
+        my_repr = "(" * (len(self) - 1)
+        my_repr += str(self.clauses[0])
+
+        for clause_index in range(1, len(self.clauses)):
+            my_repr += "&" + str(self.clauses[clause_index]) + ")"
+
+        return my_repr
 
 
     def __eq__(self, other: object) -> bool:
@@ -114,6 +142,10 @@ class CNFFormula:
 
     def __len__(self):
         return len(self.clauses)
+
+
+    def to_PropositionalFormula(self) -> PropositionalFormula:
+        return PropositionalFormula.parse(str(self))
 
 
     def update_with_model(self, model: Model):
