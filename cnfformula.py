@@ -137,6 +137,12 @@ class CNFFormula:
         return SAT if num_satisfied == len(self.clauses) else SAT_UNKNOWN
 
 
+    def add_clause(self, new_clause: CNFClause):
+        self.clauses.append(new_clause)
+        clause_variables = new_clause.positive_literals + new_clause.negative_literals
+        self.all_variables |= set(clause_variables)
+
+
 class ImplicationGraph:
 
     def __init__(self, decided_variables: Dict[str, bool] = None):

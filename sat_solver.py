@@ -8,10 +8,15 @@ from typing import Dict, Tuple
 def sat_solver(formula, partial_model=None, conflict=None):
     if partial_model is None:
         partial_model = dict()
-    if conflict is None:
-        conflict = CNFClause()  # TODO: use the conflict clause! Simply add it?
 
     cnf_formula = preprocess(formula)
+
+    if conflict is not None:
+        assert test_is_cnf(conflict)
+        cnflict_CNFFormula = propositional_formula_to_CNFFormula(conflict)
+        assert len(cnflict_CNFFormula.clauses) == 1
+        cnflict_CNFClause = cnflict_CNFFormula.clauses[0]
+        cnf_formula.add_clause(cnflict_CNFClause)
 
     if len(cnf_formula.clauses) == 0:
         return SAT
@@ -90,32 +95,57 @@ def give_representation_to_sub_formulae(propositional_formula: Formula) -> Dict[
 
 
 def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
-    currently_not_sat = [clause for clause in cnf_formula.clauses if clause.is_satisfied_under_model(model) == SAT_UNKNOWN]
-
+    working_model = dict(model)
+    possible_assignments = (True, False)
     candidates = cnf_formula.all_variables - set(model.keys())  # Starting with all unassigned variables
 
-    best_candidate = None
-    best_candidate_assignment = None
+    best_candidate = UNSAT
+    best_candidate_assignment = UNSAT
     best_candidate_score = 0
 
-    for candidate in candidates:
-        cur_candidate_score =
+    for cur_candidate in candidates:
+        for cur_assignment in possible_assignments:
+
+            working_model[cur_candidate] = cur_assignment
+            cur_score = cnf_formula.count_clauses_satisfied_by_model(working_model)
+            if cur_score != UNSAT and cur_score > best_candidate_score:
+                best_candidate = cur_candidate
+                best_candidate_assignment = cur_assignment
+                best_candidate_score = cur_score
+
+        del working_model[cur_candidate]
+
+    return best_candidate, best_candidate_assignment
 
 
-
-
-
-def decide(cnf_formula, partial_model, decision_heuristic=DLIS):
+def decide(cnf_formula, partial_model, max_decision_rounds=1, decision_heuristic=DLIS):
     implication_graph = ImplicationGraph(partial_model)
 
-    while True:
+    curr_decision_round = 0
+    while curr_decision_round <= max_decision_rounds:
+        curr_decision_round += 1
         prev_implication_graph = implication_graph
+
         sat_value, implication_graph = BCP(cnf_formula, prev_implication_graph)
-        if sat_value != SAT_UNKNOWN:  # TODO: Decide if we treat conflict and backjump her e or in BCP
+
+        if sat_value == SAT:
             return sat_value, implication_graph.get_total_model()
 
-        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
-        implication_graph.add_decision(chosen_variable, chosen_assignment)
+        elif sat_value == UNSAT:
+            if implication_graph.curr_level == 0:
+                return UNSAT, implication_graph.get_total_model()
+            else:
+                backjump_level, conflict_clause = analyze_conflict(cnf_formula, implication_graph)
+                implication_graph.backjump_to_level(backjump_level)
+                cnf_formula.add_clause(conflict_clause)
+
+        #  TODO: ? elif curr_decision_round == max_decision_rounds:
+
+        elif sat_value == SAT_UNKNOWN:
+            chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
+            assert chosen_variable != UNSAT
+            assert chosen_assignment != UNSAT
+            implication_graph.add_decision(chosen_variable, chosen_assignment)
 
 
 def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
@@ -140,10 +170,8 @@ def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
             continue
         elif result == UNSAT:
             is_sat = False
-            if implication_graph.curr_level == 0:
-                return UNSAT, implication_graph
+            return  # TODO: ?
 
-            analyze_conflict(cnf_formula, implication_graph)
         else:  # result is a inferred assignment
             is_sat = False
             inferred_assignment = result
@@ -159,11 +187,11 @@ def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
 
 
 
-def analyze_conflict(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
+def analyze_conflict(cnf_formula: CNFFormula, implication_graph: ImplicationGraph) -> Tuple[int, CNFClause]:
     # find clause to add ; find level to jump back to
     clause_to_add = implication_graph.learn_conflict_clause()
     level_to_back_jump = implication_graph.find_level_to_backjump()
-
+    return 0, None
 
 
 
