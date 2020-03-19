@@ -18,7 +18,7 @@ class CNFClause:
         self.negative_literals = copy.deepcopy(negative_literals) if negative_literals else list()
         self.negative_literals.sort()
 
-        self.watch_literals = self.find_watch_literals(dict())
+        self.watch_literals = self.find_watch_literals(Model())
 
 
     def __repr__(self) -> str:
@@ -225,22 +225,22 @@ class ImplicationGraph:
         def dfs_helper(current_node):  # Finds all uips we must go through and their min distances from the conflict
             nonlocal potential_uips, potential_uips_distances
 
-            if current_node == self.conflict_clause:
+            current_path.append(current_node)
+            if current_node == last_decision_variable:
                 potential_uips = potential_uips.intesect(set(current_path))
                 for node_index in range(len(current_path)):
                     curr_node = current_path[node_index]
-                    curr_node_dist = len(current_path) - 1 - node_index
+                    curr_node_dist = node_index
                     if curr_node_dist < potential_uips_distances[curr_node]:
                         potential_uips_distances[curr_node] = curr_node_dist
 
             else:
-                current_path.add(current_node)
-                for child in my_children:  # Todo: implement!
-                    dfs_helper(child)
+                for parent in my_parents:  # Todo: implement!
+                    dfs_helper(parent)
                 current_path.pop()
 
 
-        dfs_helper(last_decision_variable)  # Now we have all uips, and their distances
+        dfs_helper(self.conflict_clause)  # Now we have all uips, and their distances
 
         closest_uip = None
         closest_uip_dist = math.inf

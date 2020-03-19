@@ -7,7 +7,7 @@ from typing import Dict, Tuple
 
 def sat_solver(formula, partial_model=None, conflict=None) -> Tuple[str, Model]:
     if partial_model is None:
-        partial_model = dict()
+        partial_model = Model()
 
     cnf_formula = preprocess(formula)
 
@@ -118,7 +118,7 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
     return best_candidate, best_candidate_assignment
 
 
-def decide(cnf_formula, partial_model, max_decision_rounds=1, decision_heuristic=DLIS) -> Tuple[str, Model]:
+def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_rounds: int = 1, decision_heuristic=DLIS) -> Tuple[str, Model]:
     implication_graph = ImplicationGraph(partial_model)
 
     curr_decision_round = 0
