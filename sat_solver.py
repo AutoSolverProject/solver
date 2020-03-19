@@ -5,7 +5,7 @@ from propositional_logic.syntax import *
 from typing import Dict, Tuple
 
 
-def sat_solver(formula, partial_model=None, conflict=None):
+def sat_solver(formula, partial_model=None, conflict=None) -> Tuple[str, Model]:
     if partial_model is None:
         partial_model = dict()
 
@@ -118,7 +118,7 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
     return best_candidate, best_candidate_assignment
 
 
-def decide(cnf_formula, partial_model, max_decision_rounds=1, decision_heuristic=DLIS):
+def decide(cnf_formula, partial_model, max_decision_rounds=1, decision_heuristic=DLIS) -> Tuple[str, Model]:
     implication_graph = ImplicationGraph(partial_model)
 
     curr_decision_round = 0
@@ -139,7 +139,7 @@ def decide(cnf_formula, partial_model, max_decision_rounds=1, decision_heuristic
                 implication_graph.backjump_to_level(backjump_level)
                 cnf_formula.add_clause(conflict_clause)
 
-        #  TODO: ? elif curr_decision_round == max_decision_rounds:
+        #  TODO: when curr_decision_round == max_decision_rounds put values to return from outside the while
 
         elif sat_value == SAT_UNKNOWN:
             chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
@@ -149,15 +149,6 @@ def decide(cnf_formula, partial_model, max_decision_rounds=1, decision_heuristic
 
 
 def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
-    """
-    Gets a formula and a model. Deducts all it can about the model.
-    If during it finds the formula SAT - Returns.
-    If during it finds the formula UNSAT -
-            If on level 0 - returns UNSAT.
-            Else - analyzes conflict and adds clause; finds when to backjump and backjumps; Returns UNKNOWN.
-    Else - Returns UNKNOWN.
-    """
-
     is_sat = True
     inferred_assignment = None
 

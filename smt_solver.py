@@ -4,28 +4,29 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from disjoint_set_tree import *
 
 
-def solver(formula):
-    skeleton, sub_map = formula.propositional_skeleton()
-    state, partial_assignment = sat_solver(skeleton)
-    still_checking = True
-    while still_checking:
+def smt_solver(formula) -> Tuple[str, Model]:
+    skeleton, substitution_map = formula.propositional_skeleton()
+    state = SAT_UNKNOWN
+    partial_assignment = Model()
 
-        if state == UNSAT:
-            return UNSAT
+    while state == SAT_UNKNOWN:
+        state, partial_assignment = sat_solver(skeleton)
+
+        assignment = assign_in_formula(partial_assignment, substitution_map)
+        cc_value = check_congruence_closure(assignment, formula)
+        if cc_value and len(partial_assignment.keys()) == len(skeleton.variables()):
+            return SAT, assignment
+        elif not cc_value:
+            conflict = get_conflict(assignment)
+            partial_assignment = sat_solver(skeleton, partial_model=partial_assignment, conflict=conflict)
         else:
-            assignment = assign_in_formula(partial_assignment, sub_map)
-            cc_value = check_congruence_closure(assignment, formula)
-            if cc_value and len(partial_assignment.keys()) == len(skeleton.variables()):
-                return assignment
-            elif not cc_value:
-                conflict = get_conflict(assignment)
-                partial_assignment = sat_solver(skeleton, partial_model=partial_assignment, conflict=conflict)
-            else:
-                assignment = t_propagate(assignment, formula)
-                for k, v in sub_map.items():
-                    if v in assignment.keys() and assignment[v]:
-                        partial_assignment[k] = True
-                partial_assignment = sat_solver(skeleton, partial_model=partial_assignment)
+            assignment = t_propagate(assignment, formula)
+            for k, v in substitution_map.items():
+                if v in assignment.keys() and assignment[v]:
+                    partial_assignment[k] = True
+            partial_assignment = sat_solver(skeleton, partial_model=partial_assignment)
+
+    return state, partial_assignment
 
 
 def assign_in_formula(partial_assignment, sub_map):
@@ -188,13 +189,23 @@ def get_primitives_in_formula(quantifier_free):
 
 
 def get_primitives_in_term(term):
-    root = term.root
-    if is_function(root):
-        primitives = {term}
+    primitives = set()
+    if is_function(term.root):
+        primitives.add(term)
         for arg in term.arguments:
             primitives.update(get_primitives_in_term(arg))
-        return primitives
-    else:
-        return set()
+    return primitives
 
 
+def test1():
+    formula = Formula.parse('((f(a,c)=b&f(a,g(b))=b)|~c=g(b))')
+    subs = get_subterms(formula)
+    sort_by_length(subs)
+
+
+def main():
+    test1()
+
+
+if __name__ == '__main__':
+    main()
