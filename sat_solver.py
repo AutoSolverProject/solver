@@ -13,10 +13,10 @@ def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, 
 
     if conflict is not None:
         assert test_is_cnf(conflict)
-        cnflict_CNFFormula = propositional_formula_to_CNFFormula(conflict)
-        assert len(cnflict_CNFFormula.clauses) == 1
-        cnflict_CNFClause = cnflict_CNFFormula.clauses[0]
-        cnf_formula.add_clause(cnflict_CNFClause)
+        conflict_CNFFormula = propositional_formula_to_CNFFormula(conflict)
+        assert True or len(conflict_CNFFormula.clauses) == 1  # TODO: check if needed
+        for conflict_CNFClause in conflict_CNFFormula.clauses:
+            cnf_formula.add_clause(conflict_CNFClause)
 
     if len(cnf_formula.clauses) == 0:
         return SAT
