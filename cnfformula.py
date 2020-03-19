@@ -64,9 +64,18 @@ class CNFClause:
 
 
 
+    def is_satisfied_under_model(self, model: Model) -> str:
+        for pos in self.positive_literals:
+            if model.get(pos, False):
+                return SAT
 
+        for neg in self.negative_literals:
+            if not model.get(neg, True):
+                return SAT
 
-
+        # No literal was satisfied, so SAT_UNKNOWN unless all of them are in the model, and then there's no chance for SAT
+        all_literals = set(self.positive_literals + self.negative_literals)
+        return UNSAT if all_literals.issubset(model.keys()) else SAT_UNKNOWN
 
 
     def find_watch_literals(self, model: Model) -> str:
