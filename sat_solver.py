@@ -101,14 +101,14 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
 
     best_candidate = UNSAT
     best_candidate_assignment = UNSAT
-    best_candidate_score = 0
+    best_candidate_score = 0  # If a variable and it's negation don't satisfy any clause, they're not in the formula! Se we must get better results than 0
 
     for cur_candidate in candidates:
-        for cur_assignment in possible_assignments:
 
+        for cur_assignment in possible_assignments:
             working_model[cur_candidate] = cur_assignment
             cur_score = cnf_formula.count_clauses_satisfied_by_model(working_model)
-            if cur_score != UNSAT and cur_score > best_candidate_score:
+            if cur_score != UNSAT and cur_score > best_candidate_score:  # Taking the best decision that won't make a clause UNSAT
                 best_candidate = cur_candidate
                 best_candidate_assignment = cur_assignment
                 best_candidate_score = cur_score
@@ -119,7 +119,7 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
 
 
 def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_rounds: int = 1, decision_heuristic=DLIS) -> Tuple[str, Model]:
-    implication_graph = ImplicationGraph(partial_model)
+    implication_graph = ImplicationGraph(dict(partial_model))
 
     curr_decision_round = 0
     while curr_decision_round <= max_decision_rounds:
@@ -173,19 +173,22 @@ def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
     if inferred_assignment is not None:
         variable = inferred_assignment[0]
         assignment = inferred_assignment[1]
-        implication_graph.add_inference(variable, assignment)
+        causing_clause = inferred_assignment[2]
+        implication_graph.add_inference(variable, assignment, causing_clause)
         return BCP(cnf_formula, implication_graph)
 
 
-
 def analyze_conflict(cnf_formula: CNFFormula, implication_graph: ImplicationGraph) -> Tuple[int, CNFClause]:
-    # find clause to add ; find level to jump back to
-    clause_to_add = implication_graph.learn_conflict_clause()
-    level_to_back_jump = implication_graph.find_level_to_backjump()
-    return 0, None
+    conflict_clause = implication_graph.learn_conflict_clause(cnf_formula)
 
+    decision_levels_of_clause_vars = {implication_graph.get_decision_level_of_variable(variable) for variable in conflict_clause.get_all_variables()}
 
+    # Need to return the second highest decision level that appears in the conflict clause, or level 0, if it only has 1 decision level
+    if len(decision_levels_of_clause_vars) == 1:
+        return 0, conflict_clause
 
+    decision_levels_of_clause_vars_sorted = sorted(list(decision_levels_of_clause_vars))
+    backjump_level = decision_levels_of_clause_vars_sorted[-2]
 
-
+    return backjump_level, conflict_clause
 
