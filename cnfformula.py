@@ -87,6 +87,10 @@ class CNFFormula:
 
     def __init__(self, clauses: List[CNFClause]):
         self.clauses = clauses
+        self.all_variables = set()
+        for clause in self.clauses:
+            clause_variables = clause.positive_literals + clause.negative_literals
+            self.all_variables |= set(clause_variables)
 
 
     def __repr__(self) -> str:
@@ -112,6 +116,25 @@ class CNFFormula:
     def update_with_model(self, model: Model):
         for clause in self.clauses:
             clause.update_with_model(model)
+
+
+    def count_clauses_satisfied_by_model(self, model: Model) -> int:
+        sat_counter = 0
+        for clause in self.clauses:
+            sat_value = clause.is_satisfied_under_model(model)
+            if sat_value == SAT:
+                sat_counter += 1
+            elif sat_value == UNSAT:
+                return UNSAT
+        return sat_counter
+
+
+    def is_satisfied_under_model(self, model: Model) -> str:
+        num_satisfied = self.count_clauses_satisfied_by_model(model)
+        if num_satisfied == UNSAT:
+            return UNSAT
+
+        return SAT if num_satisfied == len(self.clauses) else SAT_UNKNOWN
 
 
 class ImplicationGraph:

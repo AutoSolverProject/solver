@@ -89,8 +89,18 @@ def give_representation_to_sub_formulae(propositional_formula: Formula) -> Dict[
 # endregion
 
 
-def DLIS(cnf_formula, model) -> Tuple[str, bool]:
-    pass  # TODO: implement!
+def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
+    currently_not_sat = [clause for clause in cnf_formula.clauses if clause.is_satisfied_under_model(model) == SAT_UNKNOWN]
+
+    candidates = cnf_formula.all_variables - set(model.keys())  # Starting with all unassigned variables
+
+    best_candidate = None
+    best_candidate_score = 0
+    for candidate in candidates:
+        cur_candidate_score =
+
+
+
 
 
 def decide(cnf_formula, partial_model, decision_heuristic=DLIS):
