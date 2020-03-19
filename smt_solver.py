@@ -10,7 +10,7 @@ def solver(formula):
     still_searching = True
     while still_searching:
 
-        if partial_assignment == UNSAT:
+        if state == UNSAT:
             return UNSAT
         else:
             assignment = assign_in_formula(partial_assignment, sub_map)
@@ -23,7 +23,7 @@ def solver(formula):
             else:
                 assignment = t_propagate(assignment, formula)
                 for k, v in sub_map.items():
-                    if assignment[v]:
+                    if v in assignment.keys() and assignment[v]:
                         partial_assignment[k] = True
                 partial_assignment = sat_solver(skeleton, partial_model=partial_assignment)
 
@@ -64,6 +64,16 @@ def t_propagate(assignment, formula):
         if find(left) == find(right):
             assignment[equality] = True
     return assignment
+
+
+def get_equalities_in_formula(formula):
+    if is_equality(formula.root):
+        return {formula}
+    elif is_binary(formula.root) or is_unary(formula.root):
+        equalities = get_equalities_in_formula(formula.first)
+        if is_binary(formula.root):
+            equalities = equalities | get_equalities_in_formula(formula.second)
+        return equalities
 
 
 def get_conflict(assignment):
@@ -128,7 +138,7 @@ def make_set(subterms):
     nodes = dict()
     for term in subterms:
         nodes[term] = (Node(term))
-        if is_function(term.root):
+        if is_function(term.root): # ToDo : fix this to make a correct DAG
             for arg in term.arguments:
                 nodes[arg].parent = nodes[term]
     return nodes.values()
