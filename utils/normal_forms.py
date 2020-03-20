@@ -1,4 +1,4 @@
-from propositional_logic.syntax import *
+
 from utils.test_utils import *
 
 

@@ -836,3 +836,5 @@ class Formula:
             return Formula('~', first)
 
 
+if __name__ == '__main__':
+    pass
