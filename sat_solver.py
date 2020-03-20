@@ -5,7 +5,8 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from typing import Dict, Tuple
 
 
-def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_levels=1) -> Tuple[str, Model, PropositionalFormula]:
+def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_levels: int = 5) \
+        -> Tuple[str, Model, PropositionalFormula]:
     if partial_model is None:
         partial_model = Model()
 
@@ -121,7 +122,7 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
     return best_candidate, best_candidate_assignment
 
 
-def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: int = 1, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
+def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: int = 5, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
     implication_graph = ImplicationGraph(partial_model)
 
     # Decision level zero:

@@ -5,7 +5,7 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from disjoint_set_tree import *
 
 
-def smt_solver(formula: FO_Formula) -> Tuple[str, Model, Formula]:
+def smt_solver(formula: FO_Formula) -> Tuple[str, Model, PropositionalFormula]:
     skeleton, substitution_map = formula.propositional_skeleton()
     state = SAT_UNKNOWN
     model_over_skeleton = Model()
@@ -13,13 +13,17 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model, Formula]:
 
     while state == SAT_UNKNOWN:
         state, model_over_skeleton, updated_skeleton = sat_solver(updated_skeleton, model_over_skeleton)
-        model_over_formula = model_over_skeleton_to_model_over_formula(model_over_skeleton, substitution_map)
-        cc_value = check_congruence_closure(model_over_formula, formula)
 
-        if cc_value and len(model_over_skeleton.keys()) == len(updated_skeleton.variables()):
+        if state == UNSAT:
+            return UNSAT
+
+        model_over_formula = model_over_skeleton_to_model_over_formula(model_over_skeleton, substitution_map)
+        congruence_closure_unviolated = check_congruence_closure(model_over_formula, formula)
+
+        if state == SAT and congruence_closure_unviolated and len(model_over_skeleton.keys()) == len(updated_skeleton.variables()):
             return SAT, model_over_formula, updated_skeleton
 
-        elif not cc_value:
+        elif not congruence_closure_unviolated:
             conflict = get_conflict(model_over_formula)
             state, model_over_skeleton, updated_skeleton = \
                 sat_solver(skeleton, model_over_skeleton, conflict=conflict)
