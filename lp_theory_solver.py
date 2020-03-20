@@ -51,12 +51,10 @@ def lp_solver(objective: Formula, constraints: Formula):
             if not constraint.arguments[1].root.isdigit():  # b_i for this constraint is negative
                 need_aux_problem = True
                 break
-        if need_aux_problem:                                        # ToDo: implement function, use presentation 11 slides 46-48 inclusive
-            problem_matrices = initialize_problem_matrices_for_aux(curr_constraints)
-            problem_matrices = auxiliary_problem(problem_matrices, objective)
+        if need_aux_problem:
+            is_sat = auxiliary_problem(initialize_problem_matrices_for_aux(curr_constraints))
         else:
-            problem_matrices = initialize_problem_matrices(objective, curr_constraints)  # ToDo: implement function, use presentation 12 slide 22
-        is_sat = revised_simplex(problem_matrices)
+            is_sat = revised_simplex(initialize_problem_matrices(objective, curr_constraints))
         if not is_sat:
             conflict = get_conflict(assignment)
             state, partial_assignment, TOMER_new_formula = \
@@ -69,15 +67,14 @@ def lp_solver(objective: Formula, constraints: Formula):
     return state, partial_assignment, TOMER_new_formula
 
 
-
-def revised_simplex():
+def revised_simplex(base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix):
     # ToDo
-    pass
+    return True
 
 
-def auxiliary_problem():
+def auxiliary_problem(base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix):
     #ToDo
-    pass
+    return True
 
 
 def lu_basis_factorization():
@@ -146,15 +143,18 @@ def translate_negative_constraint(inequality: Formula):
         return translate_to_le(Formula(root, inequality.arguments))
 
 
-def initialize_problem_matrices_for_aux(constraints):
+def initialize_common_matrices(constraints):
     base_matrix = np.zeros((len(constraints), len(constraints)))
     for i in range(len(constraints)):
         base_matrix[i][i] = 1
+    variables_set = set()
+    list_left_side_expressions = []
+    right_side_expressions = []
     for constraint in constraints:
         left_side_expressions = []
         if not is_function(constraint.arguments[0].root):  # just one variable on the left side of constraint (possibly with coefficient)
             left_side_expressions.append(constraint.arguments[0].root)
-        elif constraint.arguments[0].root == 'neg': # just one negated variable
+        elif constraint.arguments[0].root == 'neg':     # just one negated variable
             left_side_expressions.append('-' + constraint.arguments[0].root)
         else:   # left side is a sum of several variables with their coefficients
             for arg in constraint.arguments[0].arguments:
@@ -162,6 +162,98 @@ def initialize_problem_matrices_for_aux(constraints):
                     left_side_expressions.append('-' + arg.arguments[0].root)
                 else:   # arg is simply a variable possibly with a coefficient
                     left_side_expressions.append(arg.root)
+        for expression in left_side_expressions:
+            i = 0
+            while expression[i] != 'x':
+                i += 1
+            variables_set.add(int(expression[i+1]))
+        list_left_side_expressions.append(left_side_expressions)
+        arg = constraint.arguments[1]
+        if is_function(arg.root):
+            right_side_expressions.append(float('-' + arg.arguments[0].root.replace('dot', '.')))
+        else:
+            right_side_expressions.append(float(arg.arguments[0].root.replace('dot', '.')))
+    max_variable = max(variables_set)
+    an_matrix = np.zeros((len(constraints), max_variable))
+    for i in range(len(constraints)):
+        for expression in list_left_side_expressions[i]:
+            j = 0
+            while expression[j] != 'x':
+                j += 1
+            if j == 0:
+                an_matrix[i][int(expression[i+1:])] = 1.
+            elif j == 1:
+                an_matrix[i][int(expression[i+1:])] = -1.
+            else:
+                an_matrix[i][int(expression[i+1:])] = float(expression[:i])
+    b_matrix = np.zeros((len(constraints),))
+    for i in range(len(right_side_expressions)):
+        b_matrix[i] = right_side_expressions[i]
+    xb_matrix = np.zeros((len(constraints),))
+    cb_matrix = np.zeros((len(constraints),))
+    for i in range(len(constraints)):
+        xb_matrix[i] = i+1+len(variables_set)
+    xn_matrix = np.zeros((len(variables_set),))
+    for var in variables_set:
+        xn_matrix[var-1] = var
+    return [base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix]
+
+
+def initialize_problem_matrices_for_aux(constraints):
+    base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix = initialize_common_matrices(constraints)
+    cn_matrix = np.zeros((len(xn_matrix)+1,))
+    cn_matrix[0] = -1.
+    tmp_matrix = xn_matrix
+    xn_matrix = np.zeros((len(xn_matrix)+1,))
+    for i in range(len(tmp_matrix)):
+        xn_matrix[i+1] = tmp_matrix[i]
+    tmp_matrix = an_matrix
+    an_matrix = np.zeros((an_matrix.shape[0], an_matrix.shape[1]+1))
+    for i in range(an_matrix.shape[0]):
+        an_matrix[i][0] = -1.
+        for j in range(1, an_matrix.shape[1]):
+            an_matrix[i][j] = tmp_matrix[i][j-1]
+    return [base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix]
+
+
+def initialize_problem_matrices(objective, constraints):
+    base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix = initialize_common_matrices(constraints)
+    cn_matrix = np.zeros((len(xn_matrix),))
+    term = objective.arguments[1]
+    if not is_function(term.root) or term.root == 'neg':
+        is_neg = False
+        if term.root == 'neg':
+            is_neg = True
+            term = term.arguments[0]
+        i = 0
+        while term.root[i] != 'x':
+            i += 1
+        if i == 0:
+            coefficient = 1
+        else:
+            coefficient = term.root[:i]
+        if is_neg:
+            coefficient = -coefficient
+        cn_matrix[int(term.root[i+1:])] = coefficient
+    else:
+        for arg in term.arguments:
+            is_neg = False
+            if is_function(arg.root):
+                is_neg = True
+                arg = arg.arguments[0]
+            i = 0
+            while arg.root[i] != 'x':
+                i += 1
+            if i == 0:
+                coefficient = 1
+            else:
+                coefficient = arg.root[:i]
+            if is_neg:
+                coefficient = -coefficient
+            cn_matrix[int(arg.root[i+1:])] = coefficient
+    return [base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix]
+
+
 
 
 

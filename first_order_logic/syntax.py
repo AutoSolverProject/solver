@@ -8,6 +8,7 @@
 from __future__ import annotations
 from typing import AbstractSet, Mapping, Optional, Sequence, Set, Tuple, Union
 
+
 from logic_utils import fresh_variable_name_generator, frozen, frozendict
 
 from propositional_logic.syntax import Formula as PropositionalFormula, \
@@ -835,6 +836,3 @@ class Formula:
                 return Formula(root, first, second)
             return Formula('~', first)
 
-
-if __name__ == '__main__':
-    pass
