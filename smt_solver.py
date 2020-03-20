@@ -7,8 +7,8 @@ from disjoint_set_tree import *
 def solver(formula):
     skeleton, sub_map = formula.propositional_skeleton()
     state, partial_assignment = sat_solver(skeleton)
-    still_searching = True
-    while still_searching:
+    still_checking = True
+    while still_checking:
 
         if state == UNSAT:
             return UNSAT
@@ -197,7 +197,4 @@ def get_primitives_in_term(term):
     else:
         return set()
 
-if __name__ == '__main__':
-    formula = Formula.parse('((f(a,c)=b&f(a,g(b))=b)|~c=g(b))')
-    subs = get_subterms(formula)
-    sort_by_length(subs)
+

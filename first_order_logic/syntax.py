@@ -37,8 +37,7 @@ def is_constant(s: str) -> bool:
     Returns:
         ``True`` if the given string is a constant name, ``False`` otherwise.
     """
-    return  ((('0' <= s[0] <= '9') or ('a' <= s[0] <= 'd'))
-             and s.isalnum()) or s == '_'
+    return ((('0' <= s[0] <= '9') or ('a' <= s[0] <= 'd')) and s.isalnum()) or s == '_'
 
 def is_variable(s: str) -> bool:
     """Checks if the given string is a variable name.
@@ -324,6 +323,18 @@ def is_equality(s: str) -> bool:
     """
     return s == '='
 
+def is_inequality(s: str) -> bool:
+    """Checks if the given string is an inequality relation.
+
+    Parameters:
+        s: string to check.
+
+    Returns:
+        ``True`` if the given string is an inequality relation, ``False``
+        otherwise.
+    """
+    return s in {'<', '>', '>=', '<='}
+
 def is_relation(s: str) -> bool:
     """Checks if the given string is a relation name.
 
@@ -414,14 +425,14 @@ class Formula:
                 a binary operator; the predicate quantified by the root, if the
                 root is a quantification.
         """
-        if is_equality(root) or is_relation(root):
+        if is_equality(root) or is_inequality(root) or is_relation(root):
             # Populate self.root and self.arguments
             assert second_or_predicate is None
             assert isinstance(arguments_or_first_or_variable, Sequence) and \
                    not isinstance(arguments_or_first_or_variable, str)
             self.root, self.arguments = \
                 root, tuple(arguments_or_first_or_variable)
-            if is_equality(root):
+            if is_equality(root) or is_inequality(root):
                 assert len(self.arguments) == 2
         elif is_unary(root):
             # Populate self.first
@@ -455,9 +466,9 @@ class Formula:
             return '~' + str(self.first)
         elif is_binary(root):
             return '(' + str(self.first) + root + str(self.second) + ')'
-        elif is_equality(root):
+        elif is_equality(root) or is_inequality(root):
             args = self.arguments
-            return str(args[0]) + '=' + str(args[1])
+            return str(args[0]) + root + str(args[1])
         elif is_relation(root):
             rep = root + '('
             for arg in self.arguments:
@@ -531,9 +542,12 @@ class Formula:
             return Formula(relation, args), s[i+1:]
         elif is_constant(s[0]) or is_variable(s[0]) or is_function(s[0]):
             i = 0
-            while s[i] != '=':
+            while not (is_equality(s[i]) or is_inequality(s[i])):
                 i += 1
             root = s[i]
+            if (s[i] == '<' or s[i] == '>') and s[i+1] == '=':
+                root += s[i+1]
+                i += 1
             left = Term.parse(s[:i])
             right, remainder = Term.parse_prefix(s[i+1:])
             return Formula(root, (left, right)), remainder
@@ -764,7 +778,7 @@ class Formula:
         """
         # Task 9.6
         root = self.root
-        if is_relation(root) or is_quantifier(root) or is_equality(root):
+        if is_relation(root) or is_quantifier(root) or is_equality(root) or is_inequality(root):
             var = next(fresh_variable_name_generator)
             return PropositionalFormula(var), {var: self}
         elif is_unary(root):
@@ -774,7 +788,8 @@ class Formula:
 
     @staticmethod
     def propositional_skeleton_helper(formula, sub_map):
-        if is_relation(formula.root) or is_equality(formula.root) or is_quantifier(formula.root):
+        if is_relation(formula.root) or is_equality(formula.root) or is_inequality(formula.root) or \
+                is_quantifier(formula.root):
             if formula in sub_map.values():
                 for key in sub_map.keys():
                     if sub_map[key] == formula:
@@ -819,3 +834,5 @@ class Formula:
                 second = Formula.from_propositional_skeleton(skeleton.second, substitution_map)
                 return Formula(root, first, second)
             return Formula('~', first)
+
+
