@@ -67,6 +67,14 @@ class CNFClause:
         return PropositionalFormula.parse(str(self))
 
 
+    def is_contain_negation_of_literal(self, variable: str, assignment: bool) -> bool:
+        if assignment and variable in self.negative_literals:
+            return True
+        if not assignment and variable in self.positive_literals:
+            return True
+        return False
+
+
     def get_all_variables(self) -> Set[str]:
         return set(self.positive_literals + self.negative_literals)
 
@@ -260,10 +268,6 @@ class ImplicationGraph:
         self.causing_clauses[variable] = (causing_clause, self.curr_level)
 
 
-    def get_total_model(self) -> Model:
-        return self.total_model
-
-
     def get_index_of_causing_clause_of_variable(self, variable: str) -> int:
         return self.causing_clauses[variable][0]
 
@@ -283,7 +287,18 @@ class ImplicationGraph:
         return causing_variables
 
 
-    def find_uip(self, cnf_formula: CNFFormula):
+    def learn_conflict_clause(self, cnf_formula: CNFFormula) -> CNFClause:
+        uip = self.find_uip(cnf_formula)
+        uip_assignment = self.total_model[uip]
+        conflict_clause = self.conflict_clause
+
+        while not conflict_clause.is_contain_negation_of_literal(uip, uip_assignment):
+            conflict_clause = self.resolve(conflict_clause)
+
+        return conflict_clause
+
+
+    def find_uip(self, cnf_formula: CNFFormula) -> str:
         assert self.conflict_clause is not None
         assert self.curr_level >= 1
 
@@ -326,7 +341,7 @@ class ImplicationGraph:
         return closest_uip
 
 
-    def learn_conflict_clause(self, cnf_formula: CNFFormula) -> CNFClause:
+    def resolve(self, clause_to_resolve: CNFClause) -> CNFClause:
         # TODO: implement!
         pass
 

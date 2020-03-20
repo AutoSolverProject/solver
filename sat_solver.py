@@ -127,10 +127,10 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
     # Decision level zero:
     sat_value, implication_graph = BCP(cnf_formula, implication_graph)
     if sat_value in (SAT, UNSAT):
-        return sat_value, implication_graph.get_total_model(), cnf_formula
+        return sat_value, implication_graph.total_model, cnf_formula
 
     for decision_level in range(1, max_decision_levels + 1):
-        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
+        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
         implication_graph.add_decision(chosen_variable, chosen_assignment)
         sat_value, implication_graph, conflict_clause = BCP(cnf_formula, implication_graph)
 
@@ -145,11 +145,11 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
         elif sat_value == SAT:
             break
 
-    return sat_value, implication_graph.get_total_model(), cnf_formula
+    return sat_value, implication_graph.total_model, cnf_formula
 
 
 def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
-    result, conflict_clause = cnf_formula.update_with_model(implication_graph.get_total_model())
+    result, conflict_clause = cnf_formula.update_with_model(implication_graph.total_model)
 
     if result in [SAT, SAT_UNKNOWN]:
         return result, implication_graph
