@@ -175,24 +175,24 @@ class CNFFormula:
 
     def update_with_model(self, model: Model):
         sat_counter = 0
-        inferred_assignment = None
+        inferred_assignment = SAT_UNKNOWN
 
         for clause in self.clauses:
             result = clause.update_with_model(model)
+
             if result == UNSAT:
-                return UNSAT
-            if result == SAT:
+                return UNSAT, clause
+
+            elif result == SAT:
                 sat_counter += 1
+
             elif result == SAT_UNKNOWN:
                 continue
-            else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT, even if that means overwriting inferred_assignment
+
+            else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT. Note that inferred_assignment might change
                 inferred_assignment = result
 
-        if sat_counter == len(self.clauses):  # All clauses are SAT, and therefore also the entire formula
-            return SAT
-
-        assert inferred_assignment is not None  # We must have found at least one inferred_assignment, and we only overwrote it with other inferred_assignments
-        return inferred_assignment
+        return SAT, None if sat_counter == len(self.clauses) else inferred_assignment, None
 
 
 class ImplicationGraph:

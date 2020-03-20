@@ -5,7 +5,7 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from typing import Dict, Tuple
 
 
-def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_rounds=1) -> Tuple[str, Model, PropositionalFormula]:
+def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_levels=1) -> Tuple[str, Model, PropositionalFormula]:
     if partial_model is None:
         partial_model = Model()
 
@@ -24,7 +24,7 @@ def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, 
         if len(clause) == 0:
             return UNSAT
 
-    result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_decision_rounds=max_decision_rounds)
+    result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_decision_levels=max_decision_levels)
     equisatisfiable_PropositionalFormula = equisatisfiable_CNFFormula.to_PropositionalFormula()
     return result, model, equisatisfiable_PropositionalFormula
 
@@ -116,36 +116,25 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
 
         del working_model[cur_candidate]
 
+    assert best_candidate != UNSAT
+    assert best_candidate_assignment != UNSAT
     return best_candidate, best_candidate_assignment
 
 
-def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_rounds: int = 1, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
+def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: int = 1, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
     implication_graph = ImplicationGraph(partial_model)
 
-    # Propagate all before any decision:
-    prev_implication_graph = implication_graph
-    sat_value, implication_graph = BCP(cnf_formula, prev_implication_graph)
-    if sat_value == SAT:
+    # Decision level zero:
+    sat_value, implication_graph = BCP(cnf_formula, implication_graph)
+    if sat_value in (SAT, UNSAT):
         return sat_value, implication_graph.get_total_model(), cnf_formula
-    elif sat_value == UNSAT:
-        return UNSAT, implication_graph.get_total_model(), cnf_formula
 
-    curr_decision_round = 0
-    while curr_decision_round < max_decision_rounds:
-        curr_decision_round += 1
-
+    for decision_level in range(1, max_decision_levels + 1):
         chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.get_total_model())
-        assert chosen_variable != UNSAT
-        assert chosen_assignment != UNSAT
         implication_graph.add_decision(chosen_variable, chosen_assignment)
+        sat_value, implication_graph, conflict_clause = BCP(cnf_formula, implication_graph)
 
-        prev_implication_graph = implication_graph  # For debugging
-        sat_value, implication_graph = BCP(cnf_formula, prev_implication_graph)
-
-        if sat_value == SAT:
-            break
-
-        elif sat_value == UNSAT:
+        if sat_value == UNSAT:
             if implication_graph.curr_level == 0:
                 break
             else:
@@ -153,17 +142,26 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_rounds: i
                 implication_graph.backjump_to_level(backjump_level)
                 cnf_formula.add_clause(conflict_clause)
 
+        elif sat_value == SAT:
+            break
+
     return sat_value, implication_graph.get_total_model(), cnf_formula
 
 
-def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph) -> Tuple[str, ImplicationGraph]:
-    result = cnf_formula.update_with_model(implication_graph.get_total_model())
-    if result in (SAT, UNSAT):
+def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
+    result, conflict_clause = cnf_formula.update_with_model(implication_graph.get_total_model())
+
+    if result in [SAT, SAT_UNKNOWN]:
         return result, implication_graph
 
-    variable, assignment, causing_clause = result
-    implication_graph.add_inference(variable, assignment, causing_clause)
-    return BCP(cnf_formula, implication_graph)  # Return result of BCP on the model that includes the inference
+    elif result == UNSAT:
+        implication_graph.conflict_clause = conflict_clause
+        return result, implication_graph
+
+    else:
+        variable, assignment, causing_clause = result
+        implication_graph.add_inference(variable, assignment, causing_clause)
+        return BCP(cnf_formula, implication_graph)  # Return result of BCP on the model that includes the inference
 
 
 def analyze_conflict(cnf_formula: CNFFormula, implication_graph: ImplicationGraph) -> Tuple[int, CNFClause]:
