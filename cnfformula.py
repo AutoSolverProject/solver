@@ -11,6 +11,8 @@ from propositional_logic.semantics import Model
 @frozen
 class CNFClause:
 
+    NUM_WATCH_LITERALS = 2
+
     def __init__(self, positive_literals: List[str] = None, negative_literals: List[str] = None):
         self.positive_literals = copy.deepcopy(positive_literals) if positive_literals else list()
         self.positive_literals.sort()
@@ -18,7 +20,10 @@ class CNFClause:
         self.negative_literals = copy.deepcopy(negative_literals) if negative_literals else list()
         self.negative_literals.sort()
 
-        self.watch_literals = self.find_watch_literals(Model())
+        self.watch_literals = set()
+        self.watch_literals = self.update_watch_literals(Model(), CNFClause.NUM_WATCH_LITERALS)
+
+        self.is_sat = SAT_UNKNOWN if len(self) > 0 else UNSAT
 
 
     def __repr__(self) -> str:
@@ -79,8 +84,28 @@ class CNFClause:
         return set(self.positive_literals + self.negative_literals)
 
 
+    def on_backjump(self, model: Model):
+        watch_literals_needed_amount = min(CNFClause.NUM_WATCH_LITERALS, len(self))
+
+        watch_literals_to_reuse = set()
+        for watch_literal in self.watch_literals:
+            if watch_literal not in model:
+                watch_literals_needed_amount -= 1  # Note that we won't go below zero! :)
+                watch_literals_to_reuse.add(watch_literal)
+
+        self.watch_literals = watch_literals_to_reuse
+        self.watch_literals = self.update_watch_literals(model, watch_literals_needed_amount)
+        self.is_sat = self.is_satisfied_under_model(model)
+
+
     def is_satisfied_under_model(self, model: Model) -> str:
-        # TODO: use watch literals for efficiency
+        # TODO: make more efficient with watched literals
+        if not self.watch_literals.issubset(model.keys()):
+            return SAT_UNKNOWN
+
+        for watch_literal in self.watch_literals:
+            if watch_literal
+
         for pos in self.positive_literals:
             if model.get(pos, False):
                 return SAT
@@ -93,23 +118,45 @@ class CNFClause:
         return UNSAT if self.get_all_variables().issubset(model.keys()) else SAT_UNKNOWN
 
 
-    def update_with_model(self, model: Model):
-        # TODO: implement!
+    def is_satisfied_under_assignment(self, variable: str, assignment: bool):
+        if self.is_sat in (SAT, UNSAT):
+            return self.is_sat
+
+        if variable in self.watch_literals:
+            if assignment == (variable in self.positive_literals):
+                return SAT
+            elif len(self.watch_literals) == 1:  # We have only one option, and it's not assigned correctly
+                    return UNSAT
+            else:
+                return variable, not assignment
+
+        return SAT_UNKNOWN
+
+
+    def update_with_new_assignment(self, model: Model):
         # Check if any watch literal was assigned, and only if so bother to check if can deduce an assignment
         for watch_literal, watch_literal_sign in self.watch_literals:
             if watch_literal not in model.keys():
                 continue
             elif (model[watch_literal] == True and watch_literal_sign == False) \
                     or (model[watch_literal] == False and watch_literal_sign == True):
-                self.watch_literals = self.find_watch_literals(model)
+                self.watch_literals = self.update_watch_literals(model, CNFClause.NUM_WATCH_LITERALS)
 
         if len(self.watch_literals) == 1:
             return {self.watch_literals[0]: self.watch_literals[1]}
-        break
+        sat_value = self.is_satisfied_under_assignment(model)
+        if sat_value not in (SAT, UNSAT, SAT_UNKNOWN):  # We got a propagation
+            self.is_sat = *sat_value, causing_clause
 
 
-    def find_watch_literals(self, model: Model) -> str:
-        pass  # TODO: implement!
+    def update_watch_literals(self, model: Model, amount_needed: int = CNFClause.NUM_WATCH_LITERALS) -> Set(str):
+        if amount_needed == 0:  # Avoid any weird edge cases
+            return set()
+
+        candidates = self.get_all_variables() - model.keys()
+        candidates -= self.watch_literals  # Can't use the same literal twice
+        amount_to_take = min(len(candidates), amount_needed)  # Just a precaution, as we calculate amount_needed
+        return set(candidates[:amount_to_take])
 
 
 @frozen
@@ -156,10 +203,10 @@ class CNFFormula:
         return PropositionalFormula.parse(str(self))
 
 
-    def count_clauses_satisfied_by_model(self, model: Model) -> int:
+    def count_clauses_satisfied_by_assignment(self, variable: str, assignment: bool):
         sat_counter = 0
         for clause in self.clauses:
-            sat_value = clause.is_satisfied_under_model(model)
+            sat_value = clause.is_satisfied_under_assignment(variable, assignment)
             if sat_value == SAT:
                 sat_counter += 1
             elif sat_value == UNSAT:
@@ -167,8 +214,8 @@ class CNFFormula:
         return sat_counter
 
 
-    def is_satisfied_under_model(self, model: Model) -> str:
-        num_satisfied = self.count_clauses_satisfied_by_model(model)
+    def is_satisfied_under_assignment(self, variable: str, assignment: bool) -> str:
+        num_satisfied = self.count_clauses_satisfied_by_assignment(variable, assignment)
         if num_satisfied == UNSAT:
             return UNSAT
 
@@ -181,12 +228,17 @@ class CNFFormula:
         self.all_variables |= set(clause_variables)
 
 
-    def update_with_model(self, model: Model):
+    def on_backjump(self, model: Model):
+        for clause in self.clauses:
+            clause.on_backjump(model)
+
+
+    def update_with_new_assignment(self, variable: str, assignment: bool):
         sat_counter = 0
         inferred_assignment = SAT_UNKNOWN
 
         for clause in self.clauses:
-            result = clause.update_with_model(model)
+            result = clause.update_with_new_assignment(model)
 
             if result == UNSAT:
                 return UNSAT, clause
@@ -201,6 +253,11 @@ class CNFFormula:
                 inferred_assignment = result
 
         return SAT, None if sat_counter == len(self.clauses) else inferred_assignment, None
+
+
+    def get_results_of_last_assignment(self):
+        for clause in self.clauses:
+            clause.is_sat
 
 
 class ImplicationGraph:
