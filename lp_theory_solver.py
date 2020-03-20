@@ -43,7 +43,7 @@ def lp_solver(objective: Formula, constraints: Formula):
             assignment = assign_in_formula(partial_assignment, sub_map)
             curr_constraints = set()
             for ass in assignment:
-                if assignment[ass]:
+                if assignment[ass]:                                     # notice that x1+x2 is actually plus(x1,x2), and -x1-x2 is plus(neg(x1),neg(x2))
                     curr_constraints.add(translate_to_le(ass))  # ToDo: implement function: for example make x1+x2>4 into -x1-x2<=-4.00001
                 else:                                                       # ToDo: for both functions (the one above and the one below) check the forum for explanation
                     curr_constraints.add(translate_negative_constraint(ass))  # ToDo: implement function: for example make ~x1+x2<=4 into -x1-x2<=-4.00001, first change it to x1+x2>4, then use previous function for the rest
