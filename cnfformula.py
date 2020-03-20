@@ -67,8 +67,26 @@ class CNFClause:
         return PropositionalFormula.parse(str(self))
 
 
-    def update_with_model(self, model: Model):
+    def get_all_variables(self) -> Set[str]:
+        return set(self.positive_literals + self.negative_literals)
 
+
+    def is_satisfied_under_model(self, model: Model) -> str:
+        # TODO: use watch literals for efficiency
+        for pos in self.positive_literals:
+            if model.get(pos, False):
+                return SAT
+
+        for neg in self.negative_literals:
+            if not model.get(neg, True):
+                return SAT
+
+        # No literal was satisfied, so SAT_UNKNOWN unless all of them are in the model, and then there's no chance for SAT
+        return UNSAT if self.get_all_variables().issubset(model.keys()) else SAT_UNKNOWN
+
+
+    def update_with_model(self, model: Model):
+        # TODO: implement!
         # Check if any watch literal was assigned, and only if so bother to check if can deduce an assignment
         for watch_literal, watch_literal_sign in self.watch_literals:
             if watch_literal not in model.keys():
@@ -82,26 +100,8 @@ class CNFClause:
         break
 
 
-
-    def is_satisfied_under_model(self, model: Model) -> str:
-        for pos in self.positive_literals:
-            if model.get(pos, False):
-                return SAT
-
-        for neg in self.negative_literals:
-            if not model.get(neg, True):
-                return SAT
-
-        # No literal was satisfied, so SAT_UNKNOWN unless all of them are in the model, and then there's no chance for SAT
-        return UNSAT if self.get_all_variables().issubset(model.keys()) else SAT_UNKNOWN
-
-
     def find_watch_literals(self, model: Model) -> str:
         pass  # TODO: implement!
-
-
-    def get_all_variables(self) -> Set[str]:
-        return set(self.positive_literals + self.negative_literals)
 
 
 @frozen
@@ -119,7 +119,7 @@ class CNFFormula:
         if len(self.clauses) == 0:
             return "T"
 
-        my_repr = "(" * (len(self) - 1)
+        my_repr = "(" * (len(self.clauses) - 1)
         my_repr += str(self.clauses[0])
 
         for clause_index in range(1, len(self.clauses)):
@@ -148,11 +148,6 @@ class CNFFormula:
         return PropositionalFormula.parse(str(self))
 
 
-    def update_with_model(self, model: Model):
-        for clause in self.clauses:
-            clause.update_with_model(model)
-
-
     def count_clauses_satisfied_by_model(self, model: Model) -> int:
         sat_counter = 0
         for clause in self.clauses:
@@ -178,25 +173,49 @@ class CNFFormula:
         self.all_variables |= set(clause_variables)
 
 
+    def update_with_model(self, model: Model):
+        sat_counter = 0
+        inferred_assignment = None
+
+        for clause in self.clauses:
+            result = clause.update_with_model(model)
+            if result == UNSAT:
+                return UNSAT
+            if result == SAT:
+                sat_counter += 1
+            elif result == SAT_UNKNOWN:
+                continue
+            else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT, even if that means overwriting inferred_assignment
+                inferred_assignment = result
+
+        if sat_counter == len(self.clauses):  # All clauses are SAT, and therefore also the entire formula
+            return SAT
+
+        assert inferred_assignment is not None  # We must have found at least one inferred_assignment, and we only overwrote it with other inferred_assignments
+        return inferred_assignment
+
+
 class ImplicationGraph:
 
     CAUSING_CLAUSE_OF_DECIDED_VARIABLES = -1
 
-    def __init__(self, decided_variables: Dict[str, bool] = None):
-        decided_variables = copy.deepcopy(decided_variables) if decided_variables is not None else dict()
+
+    def __init__(self, decided_variables: Model = None):
+        decided_variables = dict(decided_variables) if decided_variables is not None else dict()
 
         self.curr_level = 0
         self.conflict_clause = None
         self.decision_variables = [decided_variables]
         self.inferred_variables = [dict()]
-        self.total_model = decided_variables
+        self.total_model = dict()
+        self.total_model.update(decided_variables)
         # Map each inferred variable to the clause that caused it, at at which level that was
         self.causing_clauses = {variable: (ImplicationGraph.CAUSING_CLAUSE_OF_DECIDED_VARIABLES, self.curr_level) for variable in decided_variables.keys()}
 
 
     def __repr__(self) -> str:
         my_repr = ""
-        for i in range(len(self.decision_variables)):
+        for i in range(self.curr_level):
             my_repr += "LEVEL " + str(i) + ": " + "\n" \
                         + "Decided: " + str(self.decision_variables[i]) + "\n" \
                         + "Inferred: " + str(self.inferred_variables[i]) + "\n"
@@ -207,7 +226,8 @@ class ImplicationGraph:
         return isinstance(other, ImplicationGraph) \
                and self.decision_variables == other.decision_variables \
                and self.inferred_variables == other.inferred_variables \
-               and self.curr_level == other.curr_level
+               and self.curr_level == other.curr_level \
+               and self.causing_clauses == other.causing_clauses
 
 
     def __ne__(self, other: object) -> bool:
@@ -222,31 +242,6 @@ class ImplicationGraph:
         return self.curr_level
 
 
-    def backjump_to_level(self, new_level):
-        assert 0 <= new_level <= self.curr_level
-
-        self.curr_level = new_level
-        self.conflict_clause = None
-        self.decision_variables = self.decision_variables[:self.curr_level + 1]
-        self.inferred_variables = self.inferred_variables[:self.curr_level + 1]
-
-        self.total_model = dict()
-        new_model = dict()
-        for i in range(self.curr_level):
-            self.total_model.update(self.decision_variables[i])
-            self.total_model.update(self.inferred_variables[i])
-
-        for i in range
-
-
-    def add_inference(self, variable: str, assignment: bool, causing_clause: int):
-        assert variable not in self.total_model.keys()
-
-        self.inferred_variables[-1][variable] = assignment
-        self.total_model[variable] = assignment
-        self.causing_clauses[variable] = (causing_clause, self.curr_level)
-
-
     def add_decision(self, variable, assignment):
         assert variable not in self.total_model.keys()
 
@@ -257,11 +252,42 @@ class ImplicationGraph:
         self.causing_clauses[variable] = (ImplicationGraph.CAUSING_CLAUSE_OF_DECIDED_VARIABLES, self.curr_level)
 
 
-    def find_uip(self):
+    def add_inference(self, variable: str, assignment: bool, causing_clause: int):
+        assert variable not in self.total_model.keys()
+
+        self.inferred_variables[-1].update({variable: assignment})
+        self.total_model[variable] = assignment
+        self.causing_clauses[variable] = (causing_clause, self.curr_level)
+
+
+    def get_total_model(self) -> Model:
+        return self.total_model
+
+
+    def get_index_of_causing_clause_of_variable(self, variable: str) -> int:
+        return self.causing_clauses[variable][0]
+
+
+    def get_decision_level_of_variable(self, variable: str) -> int:
+        return self.causing_clauses[variable][1]
+
+
+    def get_causing_variables(self, cnf_formula: CNFFormula, variable: str) -> Set[str]:
+        causing_variables = set()
+        causing_clause_index = self.get_index_of_causing_clause_of_variable(variable)
+
+        if causing_clause_index != ImplicationGraph.CAUSING_CLAUSE_OF_DECIDED_VARIABLES:
+            causing_clause = cnf_formula.clauses[causing_clause_index]
+            causing_variables = causing_clause.get_all_variables()
+
+        return causing_variables
+
+
+    def find_uip(self, cnf_formula: CNFFormula):
         assert self.conflict_clause is not None
         assert self.curr_level >= 1
 
-        last_decision_variable = list(self.decision_variables[-1].keys())[0]
+        last_decision_variable = list(self.decision_variables[-1].keys())[0]  # List of dict only for level 0. From lvl. 1 always 1 decision var per level
         potential_uips = set(copy.deepcopy(self.total_model.keys()))
         potential_uips_distances = {potential_uip: math.inf for potential_uip in potential_uips}
         current_path = list()
@@ -279,14 +305,15 @@ class ImplicationGraph:
                         potential_uips_distances[curr_node] = curr_node_dist
 
             else:
-                for parent in self.get_causing_variables(current_node):  # Todo: implement!
-                    dfs_helper(parent)
+                for parent in self.get_causing_variables(cnf_formula, current_node):
+                    if parent not in current_path:  # Avoid loop, even though we shouldn't have any - just in case
+                        dfs_helper(parent)
                 current_path.pop()
 
 
         dfs_helper(self.conflict_clause)  # Now we have all uips, and their distances
 
-        assert len(potential_uips) >= 1
+        assert len(potential_uips) >= 1  # The decision variable is a UIP, so there's at least one
 
         closest_uip = None
         closest_uip_dist = math.inf
@@ -295,21 +322,32 @@ class ImplicationGraph:
                 closest_uip = potential_uip
                 closest_uip_dist = potential_uips_distances[closest_uip]
 
-        assert closest_uip is not None  # The decision variable is a UIP, so there's at least one
+        assert closest_uip is not None
         return closest_uip
 
 
-    def get_total_model(self) -> Model:
-        return self.total_model
-
-
-    def get_causing_variables(self, variable: str) -> List[str]:
-        pass
-
-
-    def get_decision_level_of_variable(self, variable: str) -> int:
-        return self.causing_clauses[variable][1]
-
-
     def learn_conflict_clause(self, cnf_formula: CNFFormula) -> CNFClause:
+        # TODO: implement!
         pass
+
+
+    def backjump_to_level(self, new_level) -> None:
+        assert 0 <= new_level
+        assert new_level < self.curr_level
+
+        self.curr_level = new_level
+        self.conflict_clause = None
+        self.decision_variables = self.decision_variables[:self.curr_level + 1]
+        self.inferred_variables = self.inferred_variables[:self.curr_level + 1]
+
+        all_vars_before_backjump = set(self.total_model.keys())
+        self.total_model = dict()
+        for i in range(self.curr_level):
+            self.total_model.update(self.decision_variables[i])
+            self.total_model.update(self.inferred_variables[i])
+        all_vars_after_backjump = set(self.total_model.keys())
+
+        lost_vars = all_vars_before_backjump - all_vars_after_backjump
+        for var in lost_vars:
+            del self.causing_clauses[var]
+
