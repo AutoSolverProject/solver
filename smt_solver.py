@@ -1,38 +1,42 @@
 from sat_solver import *
+from first_order_logic.syntax import Formula as FO_Formula
 from first_order_logic.syntax import *
 from propositional_logic.syntax import Formula as PropositionalFormula
 from disjoint_set_tree import *
 
 
-def smt_solver(formula: Formula) -> Tuple[str, Model, Formula]:
+def smt_solver(formula: FO_Formula) -> Tuple[str, Model, Formula]:
     skeleton, substitution_map = formula.propositional_skeleton()
-    state, partial_assignment, TOMER_new_formula = sat_solver(skeleton)
+    state = SAT_UNKNOWN
+    model_over_skeleton = Model()
+    updated_skeleton = skeleton  # Keeping the original skeleton for debugging
 
-    while state != UNSAT:
+    while state == SAT_UNKNOWN:
+        state, model_over_skeleton, updated_skeleton = sat_solver(updated_skeleton, model_over_skeleton)
+        model_over_formula = model_over_skeleton_to_model_over_formula(model_over_skeleton, substitution_map)
+        cc_value = check_congruence_closure(model_over_formula, formula)
 
-        assignment = assign_in_formula(partial_assignment, substitution_map)
-        cc_value = check_congruence_closure(assignment, formula)
-        if cc_value and len(partial_assignment.keys()) == len(skeleton.variables()):
-            return SAT, assignment, TOMER_new_formula
+        if cc_value and len(model_over_skeleton.keys()) == len(updated_skeleton.variables()):
+            return SAT, model_over_formula, updated_skeleton
+
         elif not cc_value:
-            conflict = get_conflict(assignment)
-            state, partial_assignment, TOMER_new_formula = \
-                sat_solver(skeleton, partial_model=partial_assignment, conflict=conflict)
+            conflict = get_conflict(model_over_formula)
+            state, model_over_skeleton, updated_skeleton = \
+                sat_solver(skeleton, model_over_skeleton, conflict=conflict)
+
         else:
-            assignment = t_propagate(assignment, formula)
+            model_over_formula = t_propagate(model_over_formula, formula)
             partial_assignment = dict(partial_assignment)
             for k, v in substitution_map.items():
-                if v in assignment.keys() and assignment[v]:
-                    partial_assignment[k] = True
-            state, partial_assignment, TOMER_new_formula = sat_solver(skeleton, partial_model=partial_assignment)
+                if v in model_over_formula.keys() and model_over_formula[v]:
+                    model_over_skeleton[k] = True
+            state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, model_over_skeleton)
 
-    return state, partial_assignment, TOMER_new_formula
+    return state, model_over_skeleton, updated_skeleton
 
 
-def assign_in_formula(partial_assignment, sub_map):
-    assignment = dict()
-    for a, v in partial_assignment.items():
-        assignment[sub_map[a]] = v
+def model_over_skeleton_to_model_over_formula(partial_assignment, sub_map):
+    assignment = {sub_map[skeleton_var]: skeleton_var_assignment for skeleton_var, skeleton_var_assignment in partial_assignment.items()}
     return assignment
 
 
@@ -138,7 +142,7 @@ def make_set(subterms):
     nodes = dict()
     for term in subterms:
         nodes[term] = (Node(term))
-        if is_function(term.root): # ToDo : fix this to make a correct DAG
+        if is_function(term.root):  # ToDo : fix this to make a correct DAG
             for arg in term.arguments:
                 nodes[arg].parent = nodes[term]
     return nodes.values()

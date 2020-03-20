@@ -1,6 +1,6 @@
 import numpy as np
 from sat_solver import *
-from smt_solver import assign_in_formula, get_conflict
+from smt_solver import model_over_skeleton_to_model_over_formula, get_conflict
 from typing import List
 from first_order_logic.syntax import *
 
@@ -37,7 +37,7 @@ def lp_solver(objective: Formula, constraints: Formula):
 
     while state != UNSAT:
 
-        assignment = assign_in_formula(partial_assignment, sub_map)
+        assignment = model_over_skeleton_to_model_over_formula(partial_assignment, sub_map)
         curr_constraints = set()
         for ass in assignment:
             if assignment[ass]:

@@ -19,10 +19,10 @@ def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, 
             cnf_formula.add_clause(conflict_CNFClause)
 
     if len(cnf_formula.clauses) == 0:
-        return SAT
+        return SAT, partial_model, propositional_formula
     for clause in cnf_formula.clauses:
         if len(clause) == 0:
-            return UNSAT
+            return UNSAT, partial_model, propositional_formula
 
     result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_decision_levels=max_decision_levels)
     equisatisfiable_PropositionalFormula = equisatisfiable_CNFFormula.to_PropositionalFormula()

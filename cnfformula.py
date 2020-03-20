@@ -293,7 +293,7 @@ class ImplicationGraph:
         conflict_clause = self.conflict_clause
 
         while not conflict_clause.is_contain_negation_of_literal(uip, uip_assignment):
-            conflict_clause = self.resolve(conflict_clause)
+            conflict_clause = self.resolve(cnf_formula, conflict_clause)
 
         return conflict_clause
 
@@ -341,9 +341,31 @@ class ImplicationGraph:
         return closest_uip
 
 
-    def resolve(self, clause_to_resolve: CNFClause) -> CNFClause:
-        # TODO: implement!
-        pass
+    def resolve(self, cnf_formula: CNFFormula, clause_to_resolve: CNFClause) -> CNFClause:
+        last_assigned_var = self.get_last_assigned_var(clause_to_resolve)
+        last_assigned_var_causing_clause_index = self.get_index_of_causing_clause_of_variable(last_assigned_var)
+        last_assigned_var_causing_clause = cnf_formula.clauses[last_assigned_var_causing_clause_index]
+
+        vars_to_resolve = (set(clause_to_resolve.positive_literals) & set(last_assigned_var_causing_clause.negative_literals)) | \
+                          (set(clause_to_resolve.negative_literals) & set(last_assigned_var_causing_clause.positive_literals))
+        assert len(vars_to_resolve) > 0
+
+        new_pos_vars = list(set(clause_to_resolve.positive_literals + last_assigned_var_causing_clause.positive_literals) - vars_to_resolve)
+        new_neg_vars = list(set(clause_to_resolve.negative_literals + last_assigned_var_causing_clause.negative_literals) - vars_to_resolve)
+        return CNFClause(new_pos_vars, new_neg_vars)
+
+
+    def get_last_assigned_var(self, clause_to_resolve: CNFClause) -> str:
+        last_assigned_var = None
+        last_assigned_var_decision_level = 0
+        for cur_var in clause_to_resolve.get_all_variables():
+            cur_decision_level = self.get_decision_level_of_variable(cur_var)
+            if cur_decision_level > last_assigned_var_decision_level:
+                last_assigned_var = cur_var
+                last_assigned_var_decision_level = cur_decision_level
+
+        assert last_assigned_var is not None
+        return last_assigned_var
 
 
     def backjump_to_level(self, new_level) -> None:
