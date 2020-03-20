@@ -1,9 +1,9 @@
 import copy
 import math
 
-from utils.formula_utils import *
+from utils.formula_utils import SAT, SAT_UNKNOWN, UNSAT
 from logic_utils import frozen
-from typing import List, Dict
+from typing import List, Set
 from propositional_logic.syntax import Formula as PropositionalFormula
 from propositional_logic.semantics import Model
 
@@ -149,7 +149,7 @@ class CNFClause:
             self.is_sat = *sat_value, causing_clause
 
 
-    def update_watch_literals(self, model: Model, amount_needed: int = CNFClause.NUM_WATCH_LITERALS) -> Set(str):
+    def update_watch_literals(self, model: Model, amount_needed: int = NUM_WATCH_LITERALS) -> Set[str]:
         if amount_needed == 0:  # Avoid any weird edge cases
             return set()
 
