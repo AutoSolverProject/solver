@@ -170,7 +170,7 @@ def test_is_nnf(formula):
         else:
             return is_literal(sub_formula.first)
 
-    return assert_on_all_sub_formulae(formula, is_nnf_helper)
+    return assert_on_all_sub_formulae_of_propositional(formula, is_nnf_helper)
 
 
 def test_is_cnf(formula):
