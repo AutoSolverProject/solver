@@ -48,28 +48,54 @@ def lp_solver(objective: Formula, constraints: Formula):
                 curr_constraints.add(translate_negative_constraint(ass))
         need_aux_problem = False
         for constraint in curr_constraints:
-            if not constraint.arguments[1].root.isdigit():  # b_i for this constraint is negative
+            if not constraint.arguments[1].root[0].isdigit():  # b_i for this constraint is negative
                 need_aux_problem = True
                 break
         if need_aux_problem:
             is_sat = auxiliary_problem(initialize_problem_matrices_for_aux(curr_constraints))
         else:
-            is_sat = revised_simplex(initialize_problem_matrices(objective, curr_constraints))
+            is_sat = False
+            base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix = \
+                initialize_problem_matrices(objective, curr_constraints)
+            """
+            since at the beginning base_matrix is Id and cb_matrix is zero - y is zero, so for any positive coefficient in
+            cn_matrix column a of an_matrix will give ya < coefficient, and since all coefficients in b_matrix are positive 
+            (otherwise we'll run the auxiliary problem instead), in that case there exist an entering variable and a leaving 
+            variable, so there is a feasible solution iff there is a positive coefficient in cn_matrix, because even one pivot 
+            will give a feasible solution. Therefore it's enough to check that a positive coefficient exist in cn_matrix.
+            """
+            for coefficient in cn_matrix:
+                if coefficient > 0.:
+                    is_sat = True
+                    if len(partial_assignment.keys()) == len(skeleton.variables()):
+                        return SAT, partial_assignment, TOMER_new_formula
+                    else:
+                        state, partial_assignment, TOMER_new_formula = \
+                            sat_solver(skeleton, partial_model=partial_assignment)
+                        break
+
         if not is_sat:
             conflict = get_conflict(assignment)
             state, partial_assignment, TOMER_new_formula = \
                 sat_solver(skeleton, partial_model=partial_assignment, conflict=conflict)
-        else:
-            if len(partial_assignment.keys()) == len(skeleton.variables()):
-                return SAT, partial_assignment, TOMER_new_formula
-            else:
-                state, partial_assignment, TOMER_new_formula = sat_solver(skeleton, partial_model=partial_assignment)
+
     return state, partial_assignment, TOMER_new_formula
 
 
-def revised_simplex(base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix):
-    # ToDo
-    return True
+def revised_simplex(base_matrices, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix):
+    """
+    this function will run one pivot of the algorithm
+
+    :param base_matrices: either Id matrix or list of eta matrices all of which are square matrices of the size of num of constraints
+    :param xb_matrix: a vector of slack variables
+    :param an_matrix: matrix of coefficients in the constraints
+    :param xn_matrix: vector of variables of the constraints
+    :param b_matrix: vector of the right side of constraints
+    :param cb_matrix: coefficients of slack variables in the objective
+    :param cn_matrix: coefficients of the constraints' variables in the objective
+    :return: True iff a feasible solution exist
+    """
+
 
 
 def auxiliary_problem(base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix):

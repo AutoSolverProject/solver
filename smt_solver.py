@@ -5,23 +5,17 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from disjoint_set_tree import *
 
 
-def smt_solver(formula: FO_Formula) -> Tuple[str, Model, PropositionalFormula]:
+def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
     skeleton, substitution_map = formula.propositional_skeleton()
-    state = SAT_UNKNOWN
-    model_over_skeleton = Model()
-    updated_skeleton = skeleton  # Keeping the original skeleton for debugging
+    state, model_over_skeleton, updated_skeleton = sat_solver(skeleton)
 
-    while state == SAT_UNKNOWN:
-        state, model_over_skeleton, updated_skeleton = sat_solver(updated_skeleton, model_over_skeleton)
-
-        if state == UNSAT:
-            return UNSAT
+    while state != UNSAT:
 
         model_over_formula = model_over_skeleton_to_model_over_formula(model_over_skeleton, substitution_map)
         congruence_closure_unviolated = check_congruence_closure(model_over_formula, formula)
 
         if state == SAT and congruence_closure_unviolated and len(model_over_skeleton.keys()) == len(updated_skeleton.variables()):
-            return SAT, model_over_formula, updated_skeleton
+            return state, model_over_formula
 
         elif not congruence_closure_unviolated:
             conflict = get_conflict(model_over_formula)
@@ -30,13 +24,13 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model, PropositionalFormula]:
 
         else:
             model_over_formula = t_propagate(model_over_formula, formula)
-            partial_assignment = dict(partial_assignment)
+            model_over_skeleton = dict(model_over_skeleton)
             for k, v in substitution_map.items():
                 if v in model_over_formula.keys() and model_over_formula[v]:
                     model_over_skeleton[k] = True
             state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, model_over_skeleton)
+    return UNSAT
 
-    return state, model_over_skeleton, updated_skeleton
 
 
 def model_over_skeleton_to_model_over_formula(partial_assignment, sub_map):
@@ -68,8 +62,7 @@ def t_propagate(assignment, formula):
         node1, node2 = get_nodes(equality, disjoint_set)
         union(node1, node2)
     for equality in unassigned_equalities:
-        args = equality.arguments
-        left, right = args[0], args[1]
+        left, right = get_nodes(equality, disjoint_set)
         if find(left) == find(right):
             assignment[equality] = True
     return assignment
@@ -121,9 +114,7 @@ def get_subterms_in_term(term):
 
 
 def sort_by_length(subterms):
-    subterms = list(subterms)
-    subterms = sorted(subterms)
-    return set(subterms)
+    return sorted(list(subterms))
 
 
 def get_equalities(assignment):
@@ -146,7 +137,7 @@ def make_set(subterms):
     nodes = dict()
     for term in subterms:
         nodes[term] = (Node(term))
-        if is_function(term.root):  # ToDo : fix this to make a correct DAG
+        if is_function(term.root):
             for arg in term.arguments:
                 nodes[arg].parent = nodes[term]
     return nodes.values()
@@ -205,13 +196,19 @@ def get_primitives_in_term(term):
 
 
 def test1():
-    formula = Formula.parse('((f(a,c)=b&f(a,g(b))=b)|~c=g(b))')
+    formula = Formula.parse('((f(a,c)=b|f(a,g(b))=b)&~c=g(b))')
     subs = get_subterms(formula)
     sort_by_length(subs)
 
 
+def test2():
+    formula1 = Formula.parse('(f(f(f(a)))=a&(f(f(f(f(f(a)))))=a&~f(a)=a))')
+    model = {Formula.parse('f(f(f(a)))=a'): True, Formula.parse('f(f(f(f(f(a)))))=a'): True, Formula.parse('f(a)=a'): False}
+    check_congruence_closure(model, formula1)
+
+
 def main():
-    test1()
+    test2()
 
 
 if __name__ == '__main__':

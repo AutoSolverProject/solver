@@ -123,7 +123,7 @@ class Term:
         return isinstance(other, Term) and str(self) == str(other)
 
     def __lt__(self, other):
-        return str(self) < str(other)
+        return len(str(self)) < len(str(other))
         
     def __ne__(self, other: object) -> bool:
         """Compares the current term with the given one.
