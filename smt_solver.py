@@ -65,8 +65,6 @@ def t_propagate(assignment, formula):
         left, right = get_nodes(equality, disjoint_set)
         if find(left) == find(right):
             assignment[equality] = True
-        else:
-            assignment[equality] = False
     return assignment
 
 
