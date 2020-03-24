@@ -65,6 +65,8 @@ def t_propagate(assignment, formula):
         left, right = get_nodes(equality, disjoint_set)
         if find(left) == find(right):
             assignment[equality] = True
+        else:
+            assignment[equality] = False
     return assignment
 
 
@@ -196,19 +198,25 @@ def get_primitives_in_term(term):
 
 
 def test1():
-    formula = Formula.parse('((f(a,c)=b|f(a,g(b))=b)&~c=g(b))')
-    subs = get_subterms(formula)
+    formula1 = Formula.parse('((f(a,c)=b|f(a,g(b))=b)&~c=g(b))')
+    subs = get_subterms(formula1)
     sort_by_length(subs)
 
 
 def test2():
-    formula1 = Formula.parse('(f(f(f(a)))=a&(f(f(f(f(f(a)))))=a&~f(a)=a))')
-    model = {Formula.parse('f(f(f(a)))=a'): True, Formula.parse('f(f(f(f(f(a)))))=a'): True, Formula.parse('f(a)=a'): False}
-    check_congruence_closure(model, formula1)
+    formula2 = Formula.parse('(f(f(f(a)))=a&(f(f(f(f(f(a)))))=a&~f(a)=a))')
+    model2 = {Formula.parse('f(f(f(a)))=a'): True, Formula.parse('f(f(f(f(f(a)))))=a'): True, Formula.parse('f(a)=a'): False}
+    check_congruence_closure(model2, formula2)
+
+
+def test3():
+    formula3 = Formula.parse('(g(a)=c&((~f(g(a))=f(c)|g(a)=d)&~c=d))')
+    model3 = {Formula.parse('g(a)=c'): True, Formula.parse('c=d'): False}
+    print(t_propagate(model3, formula3))
 
 
 def main():
-    test2()
+    test3()
 
 
 if __name__ == '__main__':

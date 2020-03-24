@@ -98,7 +98,7 @@ def revised_simplex(base_matrices, xb_matrix, an_matrix, xn_matrix, b_matrix, cb
 
 
 
-def auxiliary_problem(base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix):
+def auxiliary_problem(base_matrices, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix):
     #ToDo
     return True
 
@@ -222,11 +222,11 @@ def initialize_common_matrices(constraints):
     xn_matrix = np.zeros((len(variables_set),))
     for var in variables_set:
         xn_matrix[var-1] = var
-    return [base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix]
+    return [[base_matrix], xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix]
 
 
 def initialize_problem_matrices_for_aux(constraints):
-    base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix = initialize_common_matrices(constraints)
+    base_matrices, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix = initialize_common_matrices(constraints)
     cn_matrix = np.zeros((len(xn_matrix)+1,))
     cn_matrix[0] = -1.
     tmp_matrix = xn_matrix
@@ -239,11 +239,11 @@ def initialize_problem_matrices_for_aux(constraints):
         an_matrix[i][0] = -1.
         for j in range(1, an_matrix.shape[1]):
             an_matrix[i][j] = tmp_matrix[i][j-1]
-    return [base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix]
+    return [base_matrices, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix]
 
 
 def initialize_problem_matrices(objective, constraints):
-    base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix = initialize_common_matrices(constraints)
+    base_matrices, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix = initialize_common_matrices(constraints)
     cn_matrix = np.zeros((len(xn_matrix),))
     term = objective.arguments[1]
     if not is_function(term.root) or term.root == 'neg':
@@ -277,7 +277,7 @@ def initialize_problem_matrices(objective, constraints):
             if is_neg:
                 coefficient = -coefficient
             cn_matrix[int(arg.root[i+1:])] = coefficient
-    return [base_matrix, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix]
+    return [base_matrices, xb_matrix, an_matrix, xn_matrix, b_matrix, cb_matrix, cn_matrix]
 
 
 
