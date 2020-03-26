@@ -1,5 +1,6 @@
 import copy
 import math
+from collections import defaultdict
 
 from utils.formula_utils import SAT, SAT_UNKNOWN, UNSAT
 from logic_utils import frozen
@@ -13,39 +14,45 @@ class CNFClause:
 
     NUM_WATCH_LITERALS = 2
 
-    def __init__(self, positive_literals: List[str] = None, negative_literals: List[str] = None):
-        self.positive_literals = copy.deepcopy(positive_literals) if positive_literals else list()
-        self.positive_literals.sort()
+    def __init__(self, positive_literals: Set[str] = None, negative_literals: Set[str] = None):
+        self.positive_literals = positive_literals if positive_literals is not None else set()
+        self.negative_literals = negative_literals if negative_literals is not None else set()
 
-        self.negative_literals = copy.deepcopy(negative_literals) if negative_literals else list()
-        self.negative_literals.sort()
+        self.all_literals = dict.fromkeys(self.positive_literals, True)
+        self.all_literals.update(dict.fromkeys(self.negative_literals, False))
+
 
         self.watch_literals = set()
-        self.watch_literals = self.update_watch_literals(Model(), CNFClause.NUM_WATCH_LITERALS)
+        self.inferred_assignment = None
+        self.is_sat = SAT_UNKNOWN
 
-        self.is_sat = SAT_UNKNOWN if len(self) > 0 else UNSAT
+
+        self.on_backjump(Model())
 
 
     def __repr__(self) -> str:
         if len(self) == 0:
-            return "F"
+            return ""
 
         my_repr = "(" * (len(self) - 1)
         first_pos = 0
         first_neg = 0
 
-        if len(self.positive_literals) > 0:
-            my_repr += str(self.positive_literals[0])
+        pos_literals_list = list(self.positive_literals)
+        neg_literals_list = list(self.negative_literals)
+
+        if len(pos_literals_list) > 0:
+            my_repr += str(pos_literals_list[0])
             first_pos = 1
-        else:
-            my_repr += "~" + str(self.negative_literals[0])
+        elif len(neg_literals_list) > 0:
+            my_repr += "~" + str(neg_literals_list[0])
             first_neg = 1
 
-        for pos_index in range(first_pos, len(self.positive_literals)):
-            my_repr += "|" + str(self.positive_literals[pos_index]) + ")"
+        for pos_index in range(first_pos, len(pos_literals_list)):
+            my_repr += "|" + str(pos_literals_list[pos_index]) + ")"
 
-        for neg_index in range(first_neg, len(self.negative_literals)):
-            my_repr += "|" + "~" + str(self.negative_literals[neg_index]) + ")"
+        for neg_index in range(first_neg, len(neg_literals_list)):
+            my_repr += "|" + "~" + str(neg_literals_list[neg_index]) + ")"
 
         return my_repr
 
@@ -65,7 +72,7 @@ class CNFClause:
 
 
     def __len__(self):
-        return len(self.positive_literals) + len(self.negative_literals)
+        return len(self.all_literals)
 
 
     def to_PropositionalFormula(self) -> PropositionalFormula:
@@ -73,15 +80,19 @@ class CNFClause:
 
 
     def is_contain_negation_of_literal(self, variable: str, assignment: bool) -> bool:
-        if assignment and variable in self.negative_literals:
-            return True
-        if not assignment and variable in self.positive_literals:
-            return True
-        return False
+        return self.all_literals[variable] != assignment
 
 
     def get_all_variables(self) -> Set[str]:
-        return set(self.positive_literals + self.negative_literals)
+        return set(self.all_literals.keys())
+
+
+    def update_inferred_assignment(self):
+        if self.is_sat in (SAT, UNSAT) or len(self.watch_literals) != 1:
+            self.inferred_assignment = None
+        else:
+            inferred_var = list(self.watch_literals)[0]
+            self.inferred_assignment = inferred_var, self.all_literals[inferred_var]
 
 
     def on_backjump(self, model: Model):
@@ -94,41 +105,37 @@ class CNFClause:
                 watch_literals_to_reuse.add(watch_literal)
 
         self.watch_literals = watch_literals_to_reuse
-        self.watch_literals = self.update_watch_literals(model, watch_literals_needed_amount)
-        self.is_sat = self.is_satisfied_under_model(model)
+        self.fill_watch_literals(model, watch_literals_needed_amount)
+        self.update_with_new_model(model)
+        self.update_inferred_assignment()
+        return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
 
-    def is_satisfied_under_model(self, model: Model) -> str:
-        # TODO: make more efficient with watched literals
-        if not self.watch_literals.issubset(model.keys()):
-            return SAT_UNKNOWN
-
-        for watch_literal in self.watch_literals:
-            if watch_literal
-
-        for pos in self.positive_literals:
+    def update_with_new_model(self, model: Model):
+        for pos in self.all_literals:  # Assuming we have small clauses, but big models
             if model.get(pos, False):
-                return SAT
+                self.is_sat = SAT
+                return
 
         for neg in self.negative_literals:
             if not model.get(neg, True):
-                return SAT
+                self.is_sat = SAT
+                return
 
         # No literal was satisfied, so SAT_UNKNOWN unless all of them are in the model, and then there's no chance for SAT
-        return UNSAT if self.get_all_variables().issubset(model.keys()) else SAT_UNKNOWN
+        self.is_sat = UNSAT if self.get_all_variables().issubset(model.keys()) else SAT_UNKNOWN
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool):
-        if self.is_sat in (SAT, UNSAT):
+        if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
             return self.is_sat
 
-        if variable in self.watch_literals:
-            if assignment == (variable in self.positive_literals):
-                return SAT
-            elif len(self.watch_literals) == 1:  # We have only one option, and it's not assigned correctly
-                    return UNSAT
-            else:
-                return variable, not assignment
+        elif self.inferred_assignment is not None:
+            return SAT if self.inferred_assignment[0] == variable and self.inferred_assignment[1] == assignment else UNSAT
+
+        elif (assignment == True and variable in self.positive_literals) \
+                or (assignment == False and variable in self.negative_literals):
+            return SAT
 
         return SAT_UNKNOWN
 
@@ -140,23 +147,23 @@ class CNFClause:
                 continue
             elif (model[watch_literal] == True and watch_literal_sign == False) \
                     or (model[watch_literal] == False and watch_literal_sign == True):
-                self.watch_literals = self.update_watch_literals(model, CNFClause.NUM_WATCH_LITERALS)
+                self.fill_watch_literals(model, CNFClause.NUM_WATCH_LITERALS)
 
         if len(self.watch_literals) == 1:
             return {self.watch_literals[0]: self.watch_literals[1]}
-        sat_value = self.is_satisfied_under_assignment(model)
+        sat_value = None
         if sat_value not in (SAT, UNSAT, SAT_UNKNOWN):  # We got a propagation
             self.is_sat = *sat_value, causing_clause
 
 
-    def update_watch_literals(self, model: Model, amount_needed: int = NUM_WATCH_LITERALS) -> Set[str]:
+    def fill_watch_literals(self, model: Model, amount_needed: int = CNFClause.NUM_WATCH_LITERALS):
         if amount_needed == 0:  # Avoid any weird edge cases
-            return set()
+            return
 
         candidates = self.get_all_variables() - model.keys()
         candidates -= self.watch_literals  # Can't use the same literal twice
-        amount_to_take = min(len(candidates), amount_needed)  # Just a precaution, as we calculate amount_needed
-        return set(candidates[:amount_to_take])
+        amount_to_take = min(len(candidates), amount_needed)  # Just a precaution, although we calculate amount_needed
+        self.watch_literals |= set(candidates[:amount_to_take])
 
 
 @frozen
@@ -164,15 +171,19 @@ class CNFFormula:
 
     def __init__(self, clauses: List[CNFClause]):
         self.clauses = clauses
-        self.all_variables = set()
+        self.var_to_containing_clause = dict()
+        self.last_result = SAT_UNKNOWN
+
         for clause in self.clauses:
-            clause_variables = clause.positive_literals + clause.negative_literals
-            self.all_variables |= set(clause_variables)
+            for var in clause.get_all_variables():
+                current_clauses = self.var_to_containing_clause.get(var, set())
+                current_clauses.add(clause)
+                self.var_to_containing_clause[var] = current_clauses
 
 
     def __repr__(self) -> str:
         if len(self.clauses) == 0:
-            return "T"
+            return ""
 
         my_repr = "(" * (len(self.clauses) - 1)
         my_repr += str(self.clauses[0])
@@ -203,9 +214,13 @@ class CNFFormula:
         return PropositionalFormula.parse(str(self))
 
 
+    def get_all_variables(self) -> Set[str]:
+        return set(self.var_to_containing_clause.keys())
+
+
     def count_clauses_satisfied_by_assignment(self, variable: str, assignment: bool):
         sat_counter = 0
-        for clause in self.clauses:
+        for clause in self.var_to_containing_clause[variable]:
             sat_value = clause.is_satisfied_under_assignment(variable, assignment)
             if sat_value == SAT:
                 sat_counter += 1
@@ -224,21 +239,41 @@ class CNFFormula:
 
     def add_clause(self, new_clause: CNFClause):
         self.clauses.append(new_clause)
-        clause_variables = new_clause.positive_literals + new_clause.negative_literals
-        self.all_variables |= set(clause_variables)
+        for var in new_clause.get_all_variables():
+            current_clauses = self.var_to_containing_clause.get(var, set())
+            current_clauses.add(new_clause)
+            self.var_to_containing_clause[var] = current_clauses
 
 
     def on_backjump(self, model: Model):
+        sat_counter = 0
+        result = (SAT_UNKNOWN, None)
+        inferred_assignment = None
         for clause in self.clauses:
-            clause.on_backjump(model)
+            sat_value = clause.on_backjump(model)
+            if sat_value == SAT:
+                sat_counter += 1
+            elif sat_value == UNSAT:
+                result = UNSAT, clause
+            elif sat_value == SAT_UNKNOWN:
+                continue
+            else:
+                inferred_assignment = result
+
+        if result[0] == UNSAT:
+            self.last_result = result
+        elif sat_counter == len(self):
+            self.last_result = SAT
+        elif re
+
 
 
     def update_with_new_assignment(self, variable: str, assignment: bool):
         sat_counter = 0
         inferred_assignment = SAT_UNKNOWN
 
-        for clause in self.clauses:
-            result = clause.update_with_new_assignment(model)
+        for clause in self.var_to_containing_clause[variable]:
+            result = clause.update_with_new_assignment(variable, assignment)
 
             if result == UNSAT:
                 return UNSAT, clause
@@ -250,14 +285,9 @@ class CNFFormula:
                 continue
 
             else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT. Note that inferred_assignment might change
-                inferred_assignment = result
+                inferred_assignment = *result, clause
 
-        return SAT, None if sat_counter == len(self.clauses) else inferred_assignment, None
-
-
-    def get_results_of_last_assignment(self):
-        for clause in self.clauses:
-            clause.is_sat
+        return SAT, None if sat_counter == len(self.clauses) else inferred_assignment
 
 
 class ImplicationGraph:
@@ -274,7 +304,7 @@ class ImplicationGraph:
         self.inferred_variables = [dict()]
         self.total_model = dict()
         self.total_model.update(decided_variables)
-        # Map each inferred variable to the clause that caused it, at at which level that was
+        # Map each inferred variable to the clause that caused it, and at which level that was
         self.causing_clauses = {variable: (ImplicationGraph.CAUSING_CLAUSE_OF_DECIDED_VARIABLES, self.curr_level) for variable in decided_variables.keys()}
 
 
@@ -369,7 +399,7 @@ class ImplicationGraph:
 
             current_path.append(current_node)
             if current_node == last_decision_variable:
-                potential_uips = potential_uips.intesect(set(current_path))
+                potential_uips.intersection_update(set(current_path))
                 for node_index in range(len(current_path)):
                     curr_node = current_path[node_index]
                     curr_node_dist = node_index
@@ -403,12 +433,12 @@ class ImplicationGraph:
         last_assigned_var_causing_clause_index = self.get_index_of_causing_clause_of_variable(last_assigned_var)
         last_assigned_var_causing_clause = cnf_formula.clauses[last_assigned_var_causing_clause_index]
 
-        vars_to_resolve = (set(clause_to_resolve.positive_literals) & set(last_assigned_var_causing_clause.negative_literals)) | \
-                          (set(clause_to_resolve.negative_literals) & set(last_assigned_var_causing_clause.positive_literals))
+        vars_to_resolve = (clause_to_resolve.positive_literals & last_assigned_var_causing_clause.negative_literals) | \
+                          (clause_to_resolve.negative_literals & last_assigned_var_causing_clause.positive_literals)
         assert len(vars_to_resolve) > 0
 
-        new_pos_vars = list(set(clause_to_resolve.positive_literals + last_assigned_var_causing_clause.positive_literals) - vars_to_resolve)
-        new_neg_vars = list(set(clause_to_resolve.negative_literals + last_assigned_var_causing_clause.negative_literals) - vars_to_resolve)
+        new_pos_vars = (clause_to_resolve.positive_literals | last_assigned_var_causing_clause.positive_literals) - vars_to_resolve
+        new_neg_vars = (clause_to_resolve.negative_literals | last_assigned_var_causing_clause.negative_literals) - vars_to_resolve
         return CNFClause(new_pos_vars, new_neg_vars)
 
 
@@ -417,7 +447,8 @@ class ImplicationGraph:
         last_assigned_var_decision_level = 0
         for cur_var in clause_to_resolve.get_all_variables():
             cur_decision_level = self.get_decision_level_of_variable(cur_var)
-            if cur_decision_level > last_assigned_var_decision_level:
+            if (cur_decision_level > last_assigned_var_decision_level) \
+                    or (cur_decision_level == last_assigned_var_decision_level and cur_var < last_assigned_var):
                 last_assigned_var = cur_var
                 last_assigned_var_decision_level = cur_decision_level
 
@@ -425,7 +456,7 @@ class ImplicationGraph:
         return last_assigned_var
 
 
-    def backjump_to_level(self, new_level) -> None:
+    def backjump_to_level(self, new_level):
         assert 0 <= new_level
         assert new_level < self.curr_level
 

@@ -20,7 +20,6 @@ def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, 
     if conflict is not None:
         assert test_is_cnf(conflict)
         conflict_CNFFormula = propositional_formula_to_CNFFormula(conflict)
-        assert True or len(conflict_CNFFormula.clauses) == 1  # TODO: check if needed
         for conflict_CNFClause in conflict_CNFFormula.clauses:
             cnf_formula.add_clause(conflict_CNFClause)
 
@@ -39,20 +38,13 @@ def preprocess(propositional_formula: PropositionalFormula) -> CNFFormula:
     for clause in cnf_formula.clauses:
         if is_trivial_clause(clause):
             continue
-        new_clause = remove_redundant_literals(clause)
-        new_clauses.append(new_clause)
+        new_clauses.append(clause)
 
     return CNFFormula(new_clauses)
 
 
-def remove_redundant_literals(cnf_clause: CNFClause) -> CNFClause:
-    return CNFClause(list(set(cnf_clause.literals)))
-
-
 def is_trivial_clause(cnf_clause: CNFClause) -> bool:
-    positive_set = set(cnf_clause.positive_literals)
-    negative_set = set(cnf_clause.negative_literals)
-    intersection = positive_set & negative_set
+    intersection = cnf_clause.positive_literals & cnf_clause.negative_literals
     return len(intersection) != 0
 
 
@@ -63,7 +55,7 @@ def tseitin_transformation(propositional_formula: PropositionalFormula) -> CNFFo
     representations = give_representation_to_sub_formulae(nnf_formula)
 
     p_g = representations[nnf_formula]
-    first_clause = CNFClause([p_g.root])
+    first_clause = CNFClause(positive_literals={p_g.root})
     clauses = [first_clause]
 
     for sub_formula, rep in representations.items():
@@ -98,11 +90,11 @@ def give_representation_to_sub_formulae(propositional_formula: PropositionalForm
 
 def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
     possible_assignments = (True, False)
-    candidates = cnf_formula.all_variables - set(model.keys())  # Starting with all unassigned variables
+    candidates = cnf_formula.get_all_variables() - set(model.keys())  # Starting with all unassigned variables
 
     best_candidate = UNSAT
     best_candidate_assignment = UNSAT
-    best_candidate_score = 0  # If a variable and it's negation don't satisfy any clause, they're not in the formula! Se we must get better results than 0
+    best_candidate_score = 0  # There's a satisfying assigment for any none-empty clause, so 0 is the minimum
 
     for cur_candidate in candidates:
         for cur_assignment in possible_assignments:
@@ -129,11 +121,10 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
     for decision_level in range(1, max_decision_levels + 1):
         chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
         implication_graph.add_decision(chosen_variable, chosen_assignment)
-        implication_graph.notify_formula_of_new_assignment()
 
         # No need to check ret value - we never choose a variable that'll cause UNSAT
         cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment)
-        sat_value, implication_graph, conflict_clause = BCP(cnf_formula, implication_graph)
+        sat_value = BCP(cnf_formula, implication_graph)
 
         if sat_value == UNSAT:
             if implication_graph.curr_level == 0:
@@ -151,18 +142,19 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
 
 
 def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
-    result, conflict_clause = cnf_formula.on_backjump(implication_graph.total_model)
+    result = cnf_formula.last_result
 
     if result in [SAT, SAT_UNKNOWN]:
-        return result, implication_graph
+        return result
 
-    elif result == UNSAT:
-        implication_graph.conflict_clause = conflict_clause
-        return result, implication_graph
+    elif result[0] == UNSAT:
+        implication_graph.conflict_clause = result[1]
+        return result[0]
 
     else:
         variable, assignment, causing_clause = result
         implication_graph.add_inference(variable, assignment, causing_clause)
+        cnf_formula.update_with_new_assignment(variable, assignment)
         return BCP(cnf_formula, implication_graph)  # Return result of BCP on the model that includes the inference
 
 
@@ -172,7 +164,7 @@ def analyze_conflict(cnf_formula: CNFFormula, implication_graph: ImplicationGrap
     decision_levels_of_clause_vars = {implication_graph.get_decision_level_of_variable(variable) for variable in conflict_clause.get_all_variables()}
 
     # Need to return the second highest decision level that appears in the conflict clause, or level 0, if it only has 1 decision level
-    if len(decision_levels_of_clause_vars) == 1:
+    if len(decision_levels_of_clause_vars) < 2:
         return 0, conflict_clause
 
     decision_levels_of_clause_vars_sorted = sorted(list(decision_levels_of_clause_vars))
