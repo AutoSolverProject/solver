@@ -58,6 +58,7 @@ def t_propagate(assignment, formula):
     disjoint_set = make_set(subterms)
     unassigned_equalities = get_equalities_in_formula(formula)
     equalities = get_equalities(assignment)
+    inequalities = get_inequalities(assignment)
     for equality in equalities:
         node1, node2 = get_nodes(equality, disjoint_set)
         union(node1, node2)
@@ -65,6 +66,22 @@ def t_propagate(assignment, formula):
         left, right = get_nodes(equality, disjoint_set)
         if find(left) == find(right):
             assignment[equality] = True
+        else:
+            for inequality in inequalities:
+                left_term, right_term = get_nodes(inequality, disjoint_set)
+                if left == left_term or left == right_term:
+                    common_term, uncommon_term = left, right
+                elif right == left_term or right == right_term:
+                    common_term, uncommon_term = right, left
+                else:
+                    continue
+                if common_term == left_term:
+                    suspect_term = right_term
+                else:
+                    suspect_term = left_term
+                if find(uncommon_term) == find(suspect_term):
+                    assignment[equality] = False
+                    break
     return assignment
 
 
@@ -210,7 +227,7 @@ def test2():
 def test3():
     formula3 = Formula.parse('(g(a)=c&((~f(g(a))=f(c)|g(a)=d)&~c=d))')
     model3 = {Formula.parse('g(a)=c'): True, Formula.parse('c=d'): False}
-    print(t_propagate(model3, formula3))
+    t_propagate(model3, formula3)
 
 
 def main():
