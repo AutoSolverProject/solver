@@ -1,7 +1,5 @@
 CC=g++
-CFLAGS = -Wall -Wvla -Wextra -g -pthread -std=c++17
-
-
+CFLAGS = -g -std=c++17
 
 
 all: naive_lp_solver
