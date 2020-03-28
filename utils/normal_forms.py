@@ -174,7 +174,13 @@ def test_is_nnf(formula):
 
 
 def test_is_cnf(formula):
-    return True  # TODO: implement!
+    if not test_is_nnf(formula):
+        return False
+    if is_literal(formula):
+        return True
+    elif formula.root == '&':
+        return test_is_cnf(formula.first) and test_is_cnf(formula.second)
+    return not (contains_and(formula.first) or contains_and(formula.second))
 
 
 # endregion
