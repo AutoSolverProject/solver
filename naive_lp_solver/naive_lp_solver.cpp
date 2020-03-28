@@ -127,12 +127,12 @@ unsigned pickEnteringVariable( const Dictionary &dictionary )
 	double coefficient = 0;
 	for (const auto &pair : dictionary.objectiveCoefficients)
 	{
-		if (pair.second > coefficient)
+		if (pair.second > coefficient)  // use Dantzig's rule to select entering variable
 		{
 			entering = pair.first;
 			coefficient = pair.second;
 		}
-		else if (pair.second == coefficient)
+		else if (pair.second == coefficient)    // use Bland's rule to break ties
 		{
 			if (pair.first < entering)
 			{
@@ -149,19 +149,19 @@ unsigned pickLeavingVariable( const Dictionary &dictionary, unsigned entering )
     double ratio = DBL_MAX;     // initialize to a very big number
 	for (unsigned i = 0; i < m; ++i)
 	{
-        for (const auto &pair : dictionary.rows[i].variableToCoefficient)
+        for (const auto &pair : dictionary.rows[i].variableToCoefficient)   // find row where entering has the tightest bound
         {
             if (pair.first == entering)
             {
                 if (!isZero(pair.second))
                 {
-                    double curr_ratio = dictionary.rows[i].scalar / -pair.second;
-                    if (curr_ratio > 0 && curr_ratio < ratio)
+                    double currentRatio = dictionary.rows[i].scalar / -pair.second;
+                    if (currentRatio > 0 && currentRatio < ratio)
                     {
-                        ratio = curr_ratio;
+                        ratio = currentRatio;
                         leaving = dictionary.rows[i].lhs;
                     }
-                    else if (curr_ratio == ratio && dictionary.rows[i].lhs < leaving)
+                    else if (currentRatio == ratio && dictionary.rows[i].lhs < leaving)
                     {
                         leaving = dictionary.rows[i].lhs;
                     }
@@ -172,65 +172,78 @@ unsigned pickLeavingVariable( const Dictionary &dictionary, unsigned entering )
     return leaving;
 }
 
-void performPivot( Dictionary &dictionary, unsigned entering, unsigned leaving )
+unsigned findPivotingRow( const Dictionary &dictionary, unsigned leaving )
 {
-    // TODO:
-    // Perform the pivot operation. You need to:
-    //   - Find the row corresponding to the leaving variable
-    //   - Perform the pivot operation on that row by isolating the entering variable
-    //   - Use the pivot row to eliminate the entering variable from all other equations
-    //   - Eliminate the entering variable from the objective function.
-	unsigned i;
+    unsigned i;
 	for (i = 0; i < m; ++i)
 	{
 		if (dictionary.rows[i].lhs == leaving) break;
 	}
-    DictionaryRow pivoting_row = dictionary.rows[i];
-    DictionaryRow new_row;
-    double entering_coefficient = -pivoting_row.variableToCoefficient[entering];
-    new_row.lhs = entering;
-    new_row.scalar = pivoting_row.scalar / entering_coefficient;
-    for (const auto &pair : pivoting_row.variableToCoefficient)
+    return i;
+}
+
+void pivot( DictionaryRow &pivotingRow, unsigned entering, unsigned leaving )
+{
+    DictionaryRow pivotedRow;
+    double enteringCoefficient = -pivotingRow.variableToCoefficient[entering];
+    pivotedRow.lhs = entering;
+    pivotedRow.scalar = pivotingRow.scalar / enteringCoefficient;
+    for (const auto &pair : pivotingRow.variableToCoefficient)
     {
         if (pair.first == entering) continue;
-        new_row.variableToCoefficient[pair.first] = pair.second / entering_coefficient;
+        pivotedRow.variableToCoefficient[pair.first] = pair.second / enteringCoefficient;
     }
-    new_row.variableToCoefficient[leaving] = -1 / entering_coefficient;
-    dictionary.rows[i] = new_row;
-    DictionaryRow curr_row;
-    pivoting_row = new_row;
+    pivotedRow.variableToCoefficient[leaving] = -1 / enteringCoefficient;
+    pivotingRow = pivotedRow;
+}
+
+void eliminateEnteringInRows( Dictionary &dictionary, DictionaryRow &pivotingRow, unsigned entering, unsigned leaving, unsigned i )
+{
+    DictionaryRow currentRow;
+    double enteringCoefficient;
     for (unsigned j = 0; j < m; ++j)
     {
         if (j == i) continue;
-        DictionaryRow updated_row;
-        curr_row = dictionary.rows[j];
-        entering_coefficient = curr_row.variableToCoefficient[entering];
-        updated_row.lhs = curr_row.lhs;
-        updated_row.scalar = curr_row.scalar + pivoting_row.scalar * entering_coefficient;
-        for (const auto &pair : curr_row.variableToCoefficient)
+        DictionaryRow updatedRow;
+        currentRow = dictionary.rows[j];
+        enteringCoefficient = currentRow.variableToCoefficient[entering];
+        updatedRow.lhs = currentRow.lhs;
+        updatedRow.scalar = currentRow.scalar + pivotingRow.scalar * enteringCoefficient;
+        for (const auto &pair : currentRow.variableToCoefficient)
         {
             if (pair.first == entering) continue;
-            updated_row.variableToCoefficient[pair.first] =
-                    pair.second + pivoting_row.variableToCoefficient[pair.first] *
-                                          entering_coefficient;
+            updatedRow.variableToCoefficient[pair.first] =
+                    pair.second + pivotingRow.variableToCoefficient[pair.first] * enteringCoefficient;
         }
-        updated_row.variableToCoefficient[leaving] = pivoting_row.variableToCoefficient[leaving]
-                                                     * entering_coefficient;
-        dictionary.rows[j] = updated_row;
+        updatedRow.variableToCoefficient[leaving] = pivotingRow.variableToCoefficient[leaving] * enteringCoefficient;
+        dictionary.rows[j] = updatedRow;
     }
-    entering_coefficient = dictionary.objectiveCoefficients[entering];
+}
+
+void eliminateEnteringInObjective( Dictionary &dictionary, DictionaryRow &pivotingRow, unsigned entering, unsigned leaving )
+{
+    double enteringCoefficient = dictionary.objectiveCoefficients[entering];
     std::map<unsigned, double> updatedObjectiveCoefficients;
     for (const auto &pair : dictionary.objectiveCoefficients)
     {
         if (pair.first == entering) continue;
         updatedObjectiveCoefficients[pair.first] =
-                pair.second + pivoting_row.variableToCoefficient[pair.first] * entering_coefficient;
+                pair.second + pivotingRow.variableToCoefficient[pair.first] * enteringCoefficient;
     }
     updatedObjectiveCoefficients[leaving] =
-            entering_coefficient * pivoting_row.variableToCoefficient[leaving];
-    dictionary.objectiveScalar += pivoting_row.scalar * entering_coefficient;
+            enteringCoefficient * pivotingRow.variableToCoefficient[leaving];
+    dictionary.objectiveScalar += pivotingRow.scalar * enteringCoefficient;
     dictionary.objectiveCoefficients = updatedObjectiveCoefficients;
-        
+}
+
+void performPivot( Dictionary &dictionary, unsigned entering, unsigned leaving )
+{
+    unsigned i = findPivotingRow( dictionary, leaving );   //   - Find the row corresponding to the leaving variable;
+	DictionaryRow pivotingRow = dictionary.rows[i];
+    pivot( pivotingRow, entering, leaving );    //   - Perform the pivot operation on that row by isolating the entering variable
+    dictionary.rows[i] = pivotingRow;
+    eliminateEnteringInRows( dictionary, pivotingRow, entering, leaving, i );    //   - Use the pivot row to eliminate the entering variable from all other equations
+    eliminateEnteringInObjective( dictionary, pivotingRow, entering, leaving );     //   - Eliminate the entering variable from the objective function.
 }
 
 void prepareInitialDictionary( Dictionary &dictionary, double *A, double *b, double *c )
