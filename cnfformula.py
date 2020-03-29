@@ -12,8 +12,6 @@ from propositional_logic.semantics import Model
 @frozen
 class CNFClause:
 
-    NUM_WATCH_LITERALS = 2
-
     def __init__(self, positive_literals: Set[str] = None, negative_literals: Set[str] = None):
         self.positive_literals = positive_literals if positive_literals is not None else set()
         self.negative_literals = negative_literals if negative_literals is not None else set()
@@ -96,7 +94,7 @@ class CNFClause:
 
 
     def on_backjump(self, model: Model):
-        watch_literals_needed_amount = min(CNFClause.NUM_WATCH_LITERALS, len(self))
+        watch_literals_needed_amount = min(2, len(self))
 
         watch_literals_to_reuse = set()
         for watch_literal in self.watch_literals:
@@ -112,7 +110,7 @@ class CNFClause:
 
 
     def update_with_new_model(self, model: Model):
-        for pos in self.all_literals:  # Assuming we have small clauses, but big models
+        for pos in self.positive_literals:  # Assuming we have small clauses, but big models
             if model.get(pos, False):
                 self.is_sat = SAT
                 return
@@ -147,7 +145,7 @@ class CNFClause:
                 continue
             elif (model[watch_literal] == True and watch_literal_sign == False) \
                     or (model[watch_literal] == False and watch_literal_sign == True):
-                self.fill_watch_literals(model, CNFClause.NUM_WATCH_LITERALS)
+                self.fill_watch_literals(model, 2)
 
         if len(self.watch_literals) == 1:
             return {self.watch_literals[0]: self.watch_literals[1]}
@@ -156,7 +154,7 @@ class CNFClause:
             self.is_sat = *sat_value, causing_clause
 
 
-    def fill_watch_literals(self, model: Model, amount_needed: int = CNFClause.NUM_WATCH_LITERALS):
+    def fill_watch_literals(self, model: Model, amount_needed: int = 2):
         if amount_needed == 0:  # Avoid any weird edge cases
             return
 
