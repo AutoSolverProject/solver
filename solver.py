@@ -37,11 +37,15 @@ def main():
     unsat_fo_formulae = {fo_formula3, fo_formula4, fo_formula5}
     print("Verify smt_solver by running it on Tuf formulae.\n\n")
     for formula in sat_fo_formulae:
+        print("Checking T-satisfiability of formula " + str(formula))
         state, model = smt_solver(formula)
         assert state == SAT
+        print("The formula " + str(formula) + ", is Tuf-satisfiable.")
     for formula in unsat_fo_formulae:
+        print("Checking T-satisfiability of formula " + str(formula))
         state, model = smt_solver(formula)
         assert state == UNSAT
+        print("The formula " + str(formula) + ", is not Tuf-satisfiable.")
 
 
 if __name__ == '__main__':
