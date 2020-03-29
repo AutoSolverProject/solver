@@ -20,7 +20,7 @@ class CNFClause:
         self.all_literals.update(dict.fromkeys(self.negative_literals, False))
 
 
-        self.watch_literals = set()
+        self.watch_literals = set()  # todo: using this is not constant - sometimes a set, sometimes with the assignment... fix!
         self.inferred_assignment = None
         self.is_sat = SAT_UNKNOWN
 
@@ -128,33 +128,38 @@ class CNFClause:
         if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
             return self.is_sat
 
-        elif self.inferred_assignment is not None:
-            return SAT if self.inferred_assignment[0] == variable and self.inferred_assignment[1] == assignment else UNSAT
+        elif self.inferred_assignment is not None:  # We have only one shot to get SAT
+            return SAT if self.inferred_assignment == (variable, assignment) else UNSAT
 
-        elif (assignment == True and variable in self.positive_literals) \
-                or (assignment == False and variable in self.negative_literals):
+        elif self.all_literals.get(variable, not assignment) == assignment:
             return SAT
 
         return SAT_UNKNOWN
 
 
-    def update_with_new_assignment(self, model: Model):
-        # Check if any watch literal was assigned, and only if so bother to check if can deduce an assignment
-        for watch_literal, watch_literal_sign in self.watch_literals:
-            if watch_literal not in model.keys():
-                continue
-            elif (model[watch_literal] == True and watch_literal_sign == False) \
-                    or (model[watch_literal] == False and watch_literal_sign == True):
-                self.fill_watch_literals(model, 2)
+    def update_with_new_assignment(self, variable: str, assignment: bool):
+        # todo: the general idea is here, but can probably make more efficient, and not 100% bug free
+        if self.is_sat in (SAT, UNSAT):
+            return self.is_sat
 
-        if len(self.watch_literals) == 1:
-            return {self.watch_literals[0]: self.watch_literals[1]}
-        sat_value = None
-        if sat_value not in (SAT, UNSAT, SAT_UNKNOWN):  # We got a propagation
-            self.is_sat = *sat_value, causing_clause
+        elif self.inferred_assignment is not None and self.inferred_assignment[0] == variable:  # We have only one shot to get SAT
+            return SAT if self.inferred_assignment[1] == assignment else UNSAT
+
+        # Check if any watch literal was assigned, and only if so bother to check if can deduce an assignment, and update watch literals
+        elif variable in self.watch_literals:
+            self.fill_watch_literals()  # todo: we need a model for that, and we don't use watch literals correctly
+            self.update_inferred_assignment()
+
+
+        if self.all_literals.get(variable, not assignment) == assignment:
+            self.is_sat = SAT
+            return SAT
+
+        return self.inferred_assignment if self.inferred_assignment is not None else SAT_UNKNOWN
 
 
     def fill_watch_literals(self, model: Model, amount_needed: int = 2):
+        # todo: check if candidates -= self.watch_literals is too expensive, and maybe just find new watch literals every time
         if amount_needed == 0:  # Avoid any weird edge cases
             return
 
@@ -244,6 +249,7 @@ class CNFFormula:
 
 
     def on_backjump(self, model: Model):
+        # todo
         sat_counter = 0
         result = (SAT_UNKNOWN, None)
         inferred_assignment = None
@@ -268,7 +274,7 @@ class CNFFormula:
 
     def update_with_new_assignment(self, variable: str, assignment: bool):
         sat_counter = 0
-        inferred_assignment = SAT_UNKNOWN
+        inferred_assignment = SAT_UNKNOWN  # If we got one inferred assignment, we'll return it. Otherwise, we'll return SAT_UNKNOWN
 
         for clause in self.var_to_containing_clause[variable]:
             result = clause.update_with_new_assignment(variable, assignment)
@@ -283,7 +289,7 @@ class CNFFormula:
                 continue
 
             else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT. Note that inferred_assignment might change
-                inferred_assignment = *result, clause
+                inferred_assignment = result + (clause,)
 
         return SAT, None if sat_counter == len(self.clauses) else inferred_assignment
 

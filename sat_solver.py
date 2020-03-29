@@ -1,4 +1,4 @@
-from cnfformula import *
+from cnf_syntax import *
 from logic_utils import __prefix_with_index_sequence_generator
 from utils.normal_forms import *
 from propositional_logic.syntax import Formula as PropositionalFormula

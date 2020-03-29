@@ -1,4 +1,4 @@
-from cnfformula import CNFFormula, CNFClause
+from cnf_syntax import CNFFormula, CNFClause
 from propositional_logic.syntax import Formula as PropositionalFormula
 from propositional_logic.syntax import *
 
