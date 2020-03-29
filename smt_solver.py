@@ -29,7 +29,7 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
                 if v in model_over_formula.keys() and model_over_formula[v]:
                     model_over_skeleton[k] = True
             state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, model_over_skeleton)
-    return UNSAT
+    return UNSAT, model_over_skeleton
 
 
 
@@ -161,21 +161,23 @@ def make_set(subterms):
 
 
 def find(term):
-    if term.parent != term:
-        term.parent = find(term.parent)
-    return term.parent
+    if term.represent != term:
+        term.represent = find(term.represent)
+    return term.represent
 
 
 def union(term1, term2):
-    x_root = find(term1)
-    y_root = find(term2)
+    x_rep = find(term1)
+    y_rep = find(term2)
 
-    if x_root == y_root:
+    if x_rep == y_rep:
         pass
-    if x_root.size < y_root.size:
-        x_root, y_root = y_root, x_root
-    y_root.parent = x_root
-    x_root.size = x_root.size + y_root.size
+    if x_rep.size < y_rep.size:
+        x_rep, y_rep = y_rep, x_rep
+    y_rep.represent = x_rep
+    x_rep.size = x_rep.size + y_rep.size
+    if term1.parent != term1 or term2.parent != term2:
+        union(term1.parent, term2.parent)
 
 
 def get_nodes(equality, disjoint_set):
@@ -212,27 +214,23 @@ def get_primitives_in_term(term):
     return primitives
 
 
-def test1():
-    formula1 = Formula.parse('((f(a,c)=b|f(a,g(b))=b)&~c=g(b))')
-    subs = get_subterms(formula1)
-    sort_by_length(subs)
-
-
-def test2():
-    formula2 = Formula.parse('(f(f(f(a)))=a&(f(f(f(f(f(a)))))=a&~f(a)=a))')
-    model2 = {Formula.parse('f(f(f(a)))=a'): True, Formula.parse('f(f(f(f(f(a)))))=a'): True, Formula.parse('f(a)=a'): False}
-    check_congruence_closure(model2, formula2)
-
-
-def test3():
-    formula3 = Formula.parse('(g(a)=c&((~f(g(a))=f(c)|g(a)=d)&~c=d))')
-    model3 = {Formula.parse('g(a)=c'): True, Formula.parse('c=d'): False}
-    t_propagate(model3, formula3)
-
-
-def main():
-    test3()
-
-
-if __name__ == '__main__':
-    main()
+# def test1():
+#     formula1 = Formula.parse('((f(a,c)=b|f(a,g(b))=b)&~c=g(b))')
+#     subs = get_subterms(formula1)
+#     sort_by_length(subs)
+#
+#
+# def test2():
+#     formula2 = Formula.parse('(f(x)=f(y)&~x=y)')
+#     model2 = {Formula.parse('f(x)=f(y)'): True, Formula.parse('x=y'): False}
+#     print(check_congruence_closure(model2, formula2))
+#     formula2 = Formula.parse('(f(f(f(a)))=a&(f(f(f(f(f(a)))))=a&~f(a)=a))')
+#     model2 = {Formula.parse('f(f(f(a)))=a'): True, Formula.parse('f(f(f(f(f(a)))))=a'): True, Formula.parse('f(a)=a'): False}
+#     print(check_congruence_closure(model2, formula2))
+#
+#
+# def test3():
+#     formula3 = Formula.parse('(g(a)=c&((~f(g(a))=f(c)|g(a)=d)&~c=d))')
+#     model3 = {Formula.parse('g(a)=c'): True, Formula.parse('c=d'): False}
+#     t_propagate(model3, formula3)
+#
