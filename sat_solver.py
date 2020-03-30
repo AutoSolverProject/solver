@@ -123,7 +123,7 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
         implication_graph.add_decision(chosen_variable, chosen_assignment)
 
         # No need to check ret value - we never choose a variable that'll cause UNSAT
-        cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment)
+        cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment, implication_graph.total_model)
         sat_value = BCP(cnf_formula, implication_graph)
 
         if sat_value == UNSAT:
@@ -149,12 +149,12 @@ def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
 
     elif result[0] == UNSAT:
         implication_graph.conflict_clause = result[1]
-        return result[0]
+        return UNSAT
 
-    else:
+    else:  # We got an inferred assignment
         variable, assignment, causing_clause = result
         implication_graph.add_inference(variable, assignment, causing_clause)
-        cnf_formula.update_with_new_assignment(variable, assignment)
+        cnf_formula.update_with_new_assignment(variable, assignment, implication_graph.total_model)
         return BCP(cnf_formula, implication_graph)  # Return result of BCP on the model that includes the inference
 
 

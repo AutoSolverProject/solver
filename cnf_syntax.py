@@ -137,28 +137,30 @@ class CNFClause:
         return SAT_UNKNOWN
 
 
-    def update_with_new_assignment(self, variable: str, assignment: bool):
-        # todo: the general idea is here, but can probably make more efficient, and not 100% bug free
+    def update_with_new_assignment(self, variable: str, assignment: bool, model: Model):
         if self.is_sat in (SAT, UNSAT):
-            return self.is_sat
-
-        elif self.inferred_assignment is not None and self.inferred_assignment[0] == variable:  # We have only one shot to get SAT
-            return SAT if self.inferred_assignment[1] == assignment else UNSAT
-
-        # Check if any watch literal was assigned, and only if so bother to check if can deduce an assignment, and update watch literals
-        elif variable in self.watch_literals:
-            self.fill_watch_literals()  # todo: we need a model for that, and we don't use watch literals correctly
-            self.update_inferred_assignment()
-
+            return self.is_sat  # No new assignment will change this state, so spare the check
 
         if self.all_literals.get(variable, not assignment) == assignment:
             self.is_sat = SAT
             return SAT
 
-        return self.inferred_assignment if self.inferred_assignment is not None else SAT_UNKNOWN
+        # NOTE: If we're here, the assigned variable is either not in our clause, OR the assignment does not satisfying us
+
+        if self.inferred_assignment is not None and self.inferred_assignment[0] == variable:
+            self.is_sat = UNSAT  # When we have an inferred variable, the only chance we'll be SAT is if it's assigned correctly
+            return UNSAT
+
+        if variable in self.watch_literals:  # We got an un-satisfying assignment to one of out watch literals
+            self.watch_literals.remove(variable)
+            self.fill_watch_literals(model)  # TODO: pass the model
+            self.update_inferred_assignment()
+
+        assert self.is_sat == SAT_UNKNOWN  # If we got here, we MUST be SAT_UNKNOWN
+        return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
 
-    def fill_watch_literals(self, model: Model, amount_needed: int = 2):
+    def fill_watch_literals(self, model: Model, amount_needed: int = 2, restricted_variables: List[str] = None):
         # todo: check if candidates -= self.watch_literals is too expensive, and maybe just find new watch literals every time
         if amount_needed == 0:  # Avoid any weird edge cases
             return
@@ -249,38 +251,38 @@ class CNFFormula:
 
 
     def on_backjump(self, model: Model):
-        # todo
         sat_counter = 0
-        result = (SAT_UNKNOWN, None)
-        inferred_assignment = None
+        found_unsat = None
+        inferred_assignment = SAT_UNKNOWN  # If we got one inferred assignment, we'll return it. Otherwise, we'll return SAT_UNKNOWN
+
         for clause in self.clauses:
-            sat_value = clause.on_backjump(model)
-            if sat_value == SAT:
+            result = clause.on_backjump(model)
+
+            if result == UNSAT:
+                found_unsat = clause  # Just a precaution, if it happens entire formula UNSAT, and we'll catch that in other places
+
+            elif result == SAT:
                 sat_counter += 1
-            elif sat_value == UNSAT:
-                result = UNSAT, clause
-            elif sat_value == SAT_UNKNOWN:
+
+            elif result == SAT_UNKNOWN:
                 continue
-            else:
-                inferred_assignment = result
 
-        if result[0] == UNSAT:
-            self.last_result = result
-        elif sat_counter == len(self):
-            self.last_result = SAT
-        elif re
+            else:  # Just a precaution, as backjumping preserves propagated assignments
+                inferred_assignment = result + (clause,)
+
+        self.last_result = UNSAT, found_unsat if found_unsat is not None else SAT if sat_counter == len(self.clauses) else inferred_assignment
 
 
-
-    def update_with_new_assignment(self, variable: str, assignment: bool):
+    def update_with_new_assignment(self, variable: str, assignment: bool, model: Model):
         sat_counter = 0
+        found_unsat = None
         inferred_assignment = SAT_UNKNOWN  # If we got one inferred assignment, we'll return it. Otherwise, we'll return SAT_UNKNOWN
 
         for clause in self.var_to_containing_clause[variable]:
-            result = clause.update_with_new_assignment(variable, assignment)
+            result = clause.update_with_new_assignment(variable, assignment, model)
 
             if result == UNSAT:
-                return UNSAT, clause
+                found_unsat = clause
 
             elif result == SAT:
                 sat_counter += 1
@@ -291,7 +293,7 @@ class CNFFormula:
             else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT. Note that inferred_assignment might change
                 inferred_assignment = result + (clause,)
 
-        return SAT, None if sat_counter == len(self.clauses) else inferred_assignment
+        self.last_result = UNSAT, found_unsat if found_unsat is not None else SAT if sat_counter == len(self.clauses) else inferred_assignment
 
 
 class ImplicationGraph:
