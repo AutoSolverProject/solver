@@ -78,7 +78,7 @@ class CNFClause:
 
 
     def is_contain_negation_of_literal(self, variable: str, assignment: bool) -> bool:
-        return self.all_literals[variable] != assignment
+        return self.all_literals.get(variable, assignment) != assignment
 
 
     def get_all_variables(self) -> Set[str]:
