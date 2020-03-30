@@ -1,4 +1,5 @@
 from cnf_syntax import *
+from cnf_syntax import UNSAT, SAT, SAT_UNKNOWN
 from logic_utils import __prefix_with_index_sequence_generator
 from utils.normal_forms import *
 from propositional_logic.syntax import Formula as PropositionalFormula
@@ -8,7 +9,7 @@ from typing import Dict, Tuple
 def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_levels: int = 5) \
         -> Tuple[str, Model, PropositionalFormula]:
     if partial_model is None:
-        partial_model = Model()
+        partial_model = dict()
 
     cnf_formula = preprocess(propositional_formula)
     if len(cnf_formula.clauses) == 0:

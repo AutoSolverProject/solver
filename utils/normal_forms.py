@@ -168,7 +168,7 @@ def test_is_nnf(formula):
         if is_binary(sub_formula.root):
             return sub_formula.root == '&' or sub_formula.root == '|'
         else:
-            return is_literal(sub_formula.first)
+            return is_literal(sub_formula)
 
     return assert_on_all_sub_formulae_of_propositional(formula, is_nnf_helper)
 

@@ -2,11 +2,15 @@ import copy
 import math
 from collections import defaultdict
 
-from utils.formula_utils import SAT, SAT_UNKNOWN, UNSAT
 from logic_utils import frozen
 from typing import List, Set
 from propositional_logic.syntax import Formula as PropositionalFormula
 from propositional_logic.semantics import Model
+
+
+UNSAT = "UNSAT"
+SAT = "SAT"
+SAT_UNKNOWN = "UNKNOWN"
 
 
 @frozen
@@ -19,13 +23,11 @@ class CNFClause:
         self.all_literals = dict.fromkeys(self.positive_literals, True)
         self.all_literals.update(dict.fromkeys(self.negative_literals, False))
 
-
         self.watch_literals = set()  # todo: using this is not constant - sometimes a set, sometimes with the assignment... fix!
         self.inferred_assignment = None
         self.is_sat = SAT_UNKNOWN
 
-
-        self.on_backjump(Model())
+        self.on_backjump(dict())
 
 
     def __repr__(self) -> str:

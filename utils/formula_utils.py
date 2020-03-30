@@ -3,13 +3,6 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from propositional_logic.syntax import *
 
 
-UNSAT = "UNSAT"
-
-SAT = "SAT"
-
-SAT_UNKNOWN = "UNKNOWN"
-
-
 def find_closure(propositional_formula: PropositionalFormula):
 
     closure = set()
