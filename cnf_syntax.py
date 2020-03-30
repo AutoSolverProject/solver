@@ -23,11 +23,24 @@ class CNFClause:
         self.all_literals = dict.fromkeys(self.positive_literals, True)
         self.all_literals.update(dict.fromkeys(self.negative_literals, False))
 
-        self.watch_literals = set()  # todo: using this is not constant - sometimes a set, sometimes with the assignment... fix!
-        self.inferred_assignment = None
         self.is_sat = SAT_UNKNOWN
+        self.watched_literals = set()
+        self.inferred_assignment = None
 
-        self.on_backjump(dict())
+        if len(self) == 0:
+            self.is_sat = UNSAT
+        elif len(self) == 1:
+            if len(self.positive_literals) == 1:
+                mr_lonely = list(self.positive_literals)[0]
+                self.watched_literals = {mr_lonely}
+                self.inferred_assignment = mr_lonely, True
+            elif len(self.negative_literals) == 1:
+                mr_lonely = list(self.negative_literals)[0]
+                self.watched_literals = {mr_lonely}
+                self.inferred_assignment = mr_lonely, False
+        else:
+            two_lonely_guys = list(self.get_all_variables())[:2]
+            self.watched_literals = set(two_lonely_guys)
 
 
     def __repr__(self) -> str:
@@ -87,31 +100,22 @@ class CNFClause:
         return set(self.all_literals.keys())
 
 
-    def update_inferred_assignment(self):
-        if self.is_sat in (SAT, UNSAT) or len(self.watch_literals) != 1:
-            self.inferred_assignment = None
-        else:
-            inferred_var = list(self.watch_literals)[0]
-            self.inferred_assignment = inferred_var, self.all_literals[inferred_var]
-
-
     def on_backjump(self, model: Model):
-        watch_literals_needed_amount = min(2, len(self))
-
-        watch_literals_to_reuse = set()
-        for watch_literal in self.watch_literals:
-            if watch_literal not in model:
-                watch_literals_needed_amount -= 1  # Note that we won't go below zero! :)
-                watch_literals_to_reuse.add(watch_literal)
-
-        self.watch_literals = watch_literals_to_reuse
-        self.fill_watch_literals(model, watch_literals_needed_amount)
+        self.update_watched_literals_and_maybe_propagate(model)
         self.update_with_new_model(model)
-        self.update_inferred_assignment()
         return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
 
     def update_with_new_model(self, model: Model):
+        # TODO
+        if self.inferred_assignment is not None:
+            variable, assignment = self.inferred_assignment
+            if variable in model:
+                self.is_sat = SAT if assignment == model[variable] else UNSAT
+            else:
+                self.is_sat = SAT_UNKNOWN
+            return
+
         for pos in self.positive_literals:  # Assuming we have small clauses, but big models
             if model.get(pos, False):
                 self.is_sat = SAT
@@ -127,6 +131,7 @@ class CNFClause:
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool):
+        # TODO
         if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
             return self.is_sat
 
@@ -140,6 +145,7 @@ class CNFClause:
 
 
     def update_with_new_assignment(self, variable: str, assignment: bool, model: Model):
+        # TODO: watched literals part
         if self.is_sat in (SAT, UNSAT):
             return self.is_sat  # No new assignment will change this state, so spare the check
 
@@ -153,24 +159,29 @@ class CNFClause:
             self.is_sat = UNSAT  # When we have an inferred variable, the only chance we'll be SAT is if it's assigned correctly
             return UNSAT
 
-        if variable in self.watch_literals:  # We got an un-satisfying assignment to one of out watch literals
-            self.watch_literals.remove(variable)
-            self.fill_watch_literals(model)  # TODO: pass the model
-            self.update_inferred_assignment()
+        if variable in self.watched_literals:  # We got an un-satisfying assignment to one of out watch literals
+            self.update_watched_literals_and_maybe_propagate(model)
 
         assert self.is_sat == SAT_UNKNOWN  # If we got here, we MUST be SAT_UNKNOWN
         return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
 
-    def fill_watch_literals(self, model: Model, amount_needed: int = 2, restricted_variables: List[str] = None):
-        # todo: check if candidates -= self.watch_literals is too expensive, and maybe just find new watch literals every time
-        if amount_needed == 0:  # Avoid any weird edge cases
+    def update_watched_literals_and_maybe_propagate(self, model: Model):
+        self.watched_literals = None  # Finding 1 watch literals is as difficult as finding 2, so don't keep the old watched_literals
+        self.inferred_assignment = None
+
+        if self.is_sat in (SAT, UNSAT):
             return
 
         candidates = self.get_all_variables() - model.keys()
-        candidates -= self.watch_literals  # Can't use the same literal twice
-        amount_to_take = min(len(candidates), amount_needed)  # Just a precaution, although we calculate amount_needed
-        self.watch_literals |= set(candidates[:amount_to_take])
+        num_to_take = min(2, len(candidates))
+
+        if num_to_take >= 1:  # Update watched_literals
+            the_chosen_ones = list(candidates)[:num_to_take]
+            self.watched_literals = set(the_chosen_ones)
+            if num_to_take == 1:  # Also update inferred_assignment (i.e. propagate)
+                inferred_variable = the_chosen_ones[0]
+                self.inferred_assignment = inferred_variable, self.all_literals[inferred_variable]
 
 
 @frozen

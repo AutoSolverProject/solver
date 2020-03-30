@@ -112,7 +112,7 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
 
 def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: int = 5, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
     implication_graph = ImplicationGraph(partial_model)
-    cnf_formula.won_backjump(implication_graph.total_model)  # Initial loading
+    cnf_formula.on_backjump(implication_graph.total_model)  # Initial loading
 
     # Decision level zero:
     sat_value, implication_graph = BCP(cnf_formula, implication_graph)
