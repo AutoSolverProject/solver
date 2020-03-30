@@ -95,22 +95,30 @@ class CNFClause:
     def update_with_new_model(self, model: Model):
         for pos in self.positive_literals:  # Assuming we have small clauses, but big models
             if model.get(pos, False):
+                self.watched_literals = set()
+                self.inferred_assignment = None
                 self.is_sat = SAT
                 return
 
         for neg in self.negative_literals:
             if not model.get(neg, True):
+                self.watched_literals = set()
+                self.inferred_assignment = None
                 self.is_sat = SAT
                 return
 
         # No literal was satisfied, so SAT_UNKNOWN unless all of them are in the model, and then there's no chance for SAT
-        self.is_sat = UNSAT if self.get_all_variables().issubset(model.keys()) else SAT_UNKNOWN
+        if self.get_all_variables().issubset(model.keys()):
+            self.is_sat = UNSAT
+            self.watched_literals = set()
+            self.inferred_assignment = None
+        else:
+            self.is_sat = SAT_UNKNOWN
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool):
-        # TODO: the "or variable not in self.all_literals" part is not correct
         if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
-            return self.is_sat
+            return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
         elif self.inferred_assignment is not None:  # We have only one shot to get SAT
             return SAT if self.inferred_assignment == (variable, assignment) else UNSAT
