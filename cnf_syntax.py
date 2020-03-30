@@ -23,24 +23,10 @@ class CNFClause:
         self.all_literals = dict.fromkeys(self.positive_literals, True)
         self.all_literals.update(dict.fromkeys(self.negative_literals, False))
 
-        self.is_sat = SAT_UNKNOWN
-        self.watched_literals = set()
+        self.is_sat = UNSAT if len(self) == 0 else SAT_UNKNOWN
         self.inferred_assignment = None
-
-        if len(self) == 0:
-            self.is_sat = UNSAT
-        elif len(self) == 1:
-            if len(self.positive_literals) == 1:
-                mr_lonely = list(self.positive_literals)[0]
-                self.watched_literals = {mr_lonely}
-                self.inferred_assignment = mr_lonely, True
-            elif len(self.negative_literals) == 1:
-                mr_lonely = list(self.negative_literals)[0]
-                self.watched_literals = {mr_lonely}
-                self.inferred_assignment = mr_lonely, False
-        else:
-            two_lonely_guys = list(self.get_all_variables())[:2]
-            self.watched_literals = set(two_lonely_guys)
+        self.watched_literals = set()
+        self.update_watched_literals_and_maybe_propagate(dict())
 
 
     def __repr__(self) -> str:
@@ -107,15 +93,6 @@ class CNFClause:
 
 
     def update_with_new_model(self, model: Model):
-        # TODO
-        if self.inferred_assignment is not None:
-            variable, assignment = self.inferred_assignment
-            if variable in model:
-                self.is_sat = SAT if assignment == model[variable] else UNSAT
-            else:
-                self.is_sat = SAT_UNKNOWN
-            return
-
         for pos in self.positive_literals:  # Assuming we have small clauses, but big models
             if model.get(pos, False):
                 self.is_sat = SAT
@@ -131,7 +108,7 @@ class CNFClause:
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool):
-        # TODO
+        # TODO: the "or variable not in self.all_literals" part is not correct
         if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
             return self.is_sat
 
@@ -145,18 +122,21 @@ class CNFClause:
 
 
     def update_with_new_assignment(self, variable: str, assignment: bool, model: Model):
-        # TODO: watched literals part
         if self.is_sat in (SAT, UNSAT):
             return self.is_sat  # No new assignment will change this state, so spare the check
 
         if self.all_literals.get(variable, not assignment) == assignment:
             self.is_sat = SAT
+            self.inferred_assignment = None
+            self.watched_literals = set()
             return SAT
 
         # NOTE: If we're here, the assigned variable is either not in our clause, OR the assignment does not satisfying us
 
         if self.inferred_assignment is not None and self.inferred_assignment[0] == variable:
             self.is_sat = UNSAT  # When we have an inferred variable, the only chance we'll be SAT is if it's assigned correctly
+            self.inferred_assignment = None
+            self.watched_literals = set()
             return UNSAT
 
         if variable in self.watched_literals:  # We got an un-satisfying assignment to one of out watch literals
@@ -167,7 +147,7 @@ class CNFClause:
 
 
     def update_watched_literals_and_maybe_propagate(self, model: Model):
-        self.watched_literals = None  # Finding 1 watch literals is as difficult as finding 2, so don't keep the old watched_literals
+        self.watched_literals = set()  # Finding 1 watch literals is as difficult as finding 2, so don't keep the old watched_literals
         self.inferred_assignment = None
 
         if self.is_sat in (SAT, UNSAT):
