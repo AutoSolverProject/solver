@@ -4,11 +4,12 @@ from sat_solver import sat_solver
 from smt_solver import smt_solver
 from utils.formula_utils import *
 
+
 def main():
     p_formula1 = PropositionalFormula.parse('((p&~q)&(p<->q))')
     p_formula2 = PropositionalFormula.parse('(~p2&(p2|((p1<->p3)->p2)))')
     p_formula3 = PropositionalFormula.parse('(x1&((~x1|x2)&((~x3|x4)&((~x5|~x6)&((~x1|(~x5|x7))&((~x2|~x5)|(x6|~x7)))))))')
-    p_formulae = {p_formula1, p_formula2, p_formula3}
+    p_formulae = [p_formula1, p_formula2, p_formula3]
 
     print("Verify sat_solver by running it on propositional formulae.\n\n")
     for formula in p_formulae:
