@@ -1,6 +1,6 @@
 ====================================================================================================================
 ============================= Project in Automated Reasoning About Software ========================================
---------------------------------------------------------------------------------------------------------------------
+====================================================================================================================
 
 Authors: Ofer Ravid, Tomer Michael.
 
@@ -10,15 +10,15 @@ with implementations by Ofer, and we were given permission to use in this projec
 These files are located in the folders: first_order_logic and propositional_logic.
 
 For the project we authored the following files:
-- sat_solver.py - mainly authored by Tomer.
-- smt_solver.py - mainly authored by Ofer.
-- lp_theory_solver - unfinished implementation for part 3 of the project, authored by Ofer.
-- cnf_syntax.py - authored by Tomer.
-- disjoint_set_tree.py - authored by Ofer.
-- utils.formula_utils.py - authored by Tomer.
-- utils.normal_forms.py - authored by Ofer.
-- utils.test_utils.py - authored by Tomer.
-- naive_lp_solver - authored by Ofer, solving an alternate part 3, this include:
+- sat_solver.py - Mainly authored by Tomer.
+- smt_solver.py - Mainly authored by Ofer.
+- lp_theory_solver - Unfinished implementation for part 3 of the project, authored by Ofer.
+- cnf_syntax.py - Authored by Tomer.
+- disjoint_set_tree.py - Authored by Ofer.
+- utils.formula_utils.py - Authored by Tomer.
+- utils.normal_forms.py - Co-authored by Ofer and Tomer.
+- utils.test_utils.py - Authored by Tomer.
+- naive_lp_solver - Authored by Ofer, solving an alternate part 3, this include:
     - naive_lp_solver.cpp
     - Makefile
 
