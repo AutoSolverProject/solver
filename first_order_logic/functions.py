@@ -6,11 +6,6 @@
 """Syntactic conversion of first-order formulas to not use functions and
 equality."""
 
-from typing import AbstractSet, List, Set
-
-from logic_utils import fresh_variable_name_generator
-
-from first_order_logic.syntax import *
 from first_order_logic.semantics import *
 
 def function_name_to_relation_name(function: str) -> str:

@@ -5,7 +5,7 @@
 
 """Tests for the propositional_logic.syntax module."""
 
-from logic_utils import frozendict
+from utils.logic_utils import frozendict
 
 from propositional_logic.syntax import *
 

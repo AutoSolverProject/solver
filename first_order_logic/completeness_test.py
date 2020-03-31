@@ -4,11 +4,8 @@
 # File name: first_order_logic/completeness_test.py
 
 """Tests for the first_order_logic.completeness module."""
-import time
 
 from propositional_logic.semantics import is_tautology
-from first_order_logic.syntax import *
-from first_order_logic.semantics import *
 from first_order_logic.completeness import *
 
 # Tests for is_***_closed functions
@@ -599,7 +596,7 @@ def test_eliminate_existential_witness_assumption(debug=False):
     assert eliminated.is_valid()
 
 def test_existential_closure_step(debug=False):
-    from logic_utils import fresh_constant_name_generator
+    from utils.logic_utils import fresh_constant_name_generator
     fresh_constant_name_generator._reset_for_test()
 
     if debug:

@@ -3,16 +3,13 @@
 # by Gonczarowski and Nisan.
 # File name: first_order_logic/completeness.py
 
-from typing import AbstractSet, Container, Set, Union
+from typing import Container
 
 import itertools
 
-from logic_utils import fresh_constant_name_generator
+from utils.logic_utils import fresh_constant_name_generator
 
-from first_order_logic.syntax import *
 from first_order_logic.semantics import *
-from first_order_logic.proofs import *
-from first_order_logic.prover import *
 from first_order_logic.deduction import *
 from first_order_logic.prenex import *
 

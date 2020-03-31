@@ -5,12 +5,6 @@
 
 """Conversion of predicate-logic formulas into prenex normal form."""
 
-from typing import Tuple
-
-from logic_utils import fresh_variable_name_generator
-
-from first_order_logic.syntax import *
-from first_order_logic.proofs import *
 from first_order_logic.prover import *
 
 #: Additional axioms of quantification for first-order predicate logic.

@@ -318,7 +318,7 @@ def test_formula_substitute(debug=False):
             assert e.variable_name == variable_name
 
 def test_propositional_skeleton(debug=False):
-    from logic_utils import fresh_variable_name_generator
+    from utils.logic_utils import fresh_variable_name_generator
     fresh_variable_name_generator._reset_for_test()
 
     for s,expected,expected_map in [

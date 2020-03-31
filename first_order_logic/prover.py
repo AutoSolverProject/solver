@@ -3,12 +3,8 @@
 # by Gonczarowski and Nisan.
 # File name: first_order_logic/prover.py
 
-from typing import AbstractSet, Collection, FrozenSet, List, Mapping, \
-                   Sequence, Tuple, Union
+from typing import Collection, List
 
-from logic_utils import fresh_variable_name_generator
-
-from first_order_logic.syntax import *
 from first_order_logic.proofs import *
 
 class Prover:

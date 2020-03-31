@@ -5,9 +5,7 @@
 
 """Semantic analysis of first-order logic constructs."""
 
-from typing import AbstractSet, FrozenSet, Generic, Mapping, Tuple, TypeVar, List, Dict
-
-from logic_utils import frozen, frozendict
+from typing import FrozenSet, Generic, TypeVar, Dict
 
 from first_order_logic.syntax import *
 

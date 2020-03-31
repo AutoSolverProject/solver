@@ -6,10 +6,7 @@
 """Proofs by deduction in propositional logic."""
 
 from __future__ import annotations
-from typing import AbstractSet, Iterable, FrozenSet, List, Mapping, Optional, \
-                   Set, Tuple, Union
-
-from logic_utils import frozen
+from typing import AbstractSet, Iterable, FrozenSet
 
 from propositional_logic.syntax import *
 

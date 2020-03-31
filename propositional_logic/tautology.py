@@ -5,12 +5,8 @@
 
 """The Tautology Theorem and its implications."""
 
-from typing import List, Union
+from utils.logic_utils import frozendict
 
-from logic_utils import frozendict
-
-from propositional_logic.syntax import *
-from propositional_logic.proofs import *
 from propositional_logic.deduction import *
 from propositional_logic.semantics import *
 #from propositional_logic.operators import *

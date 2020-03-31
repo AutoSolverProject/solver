@@ -8,7 +8,7 @@
 from __future__ import annotations
 from typing import Mapping, Optional, Set, Tuple, Union
 
-from logic_utils import frozen
+from utils.logic_utils import frozen
 
 def is_variable(s: str) -> bool:
     """Checks if the given string is an atomic proposition.

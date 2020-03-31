@@ -5,12 +5,6 @@
 
 """Tests for the propositional_logic.tautology module."""
 
-from logic_utils import frozendict
-
-from propositional_logic.syntax import *
-from propositional_logic.semantics import *
-from propositional_logic.proofs import *
-from propositional_logic.deduction import *
 from propositional_logic.tautology import *
 
 from propositional_logic.proofs_test import offending_line

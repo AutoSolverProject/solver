@@ -5,9 +5,8 @@
 
 """Tests for the propositional_logic.semantics module."""
 
-from logic_utils import frozendict
+from utils.logic_utils import frozendict
 
-from propositional_logic.syntax import *
 from propositional_logic.semantics import *
 from propositional_logic.axiomatic_systems import *
 

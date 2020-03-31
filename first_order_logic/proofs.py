@@ -4,9 +4,7 @@
 # File name: first_order_logic/proofs.py
 
 from __future__ import annotations
-from typing import AbstractSet, FrozenSet, Mapping, Sequence, Tuple, Union
-
-from logic_utils import frozen, frozendict
+from typing import FrozenSet
 
 from propositional_logic.semantics import is_tautology as is_propositional_tautology
 

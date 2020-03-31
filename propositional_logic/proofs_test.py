@@ -5,9 +5,8 @@
 
 """Tests for the propositional_logic.proofs module."""
 
-from logic_utils import frozendict
+from utils.logic_utils import frozendict
 
-from propositional_logic.syntax import *
 from propositional_logic.proofs import *
 
 # Tests for InferenceRule
