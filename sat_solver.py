@@ -47,11 +47,8 @@ def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, 
             cnf_formula.add_clause(conflict_CNFClause)
 
     result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_rounds=max_rounds)
-
     equisatisfiable_PropositionalFormula = equisatisfiable_CNFFormula.to_PropositionalFormula()
-    original_model = {var: assignment for var, assignment in model.items() if var in propositional_formula.variables()}
-
-    return result, original_model, equisatisfiable_PropositionalFormula
+    return result, model, equisatisfiable_PropositionalFormula
 
 
 def decide(cnf_formula: CNFFormula, partial_model: Model, max_rounds: int = 5, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:

@@ -8,13 +8,14 @@ from utils.formula_utils import *
 
 def test_sat_solver_on_single_formula(formula, correct_state):
     state, model, new_formula = sat_solver(formula, max_rounds=CONTINUE_UNTIL_MODEL_FULL)
+    original_model = {var: assignment for var, assignment in model.items() if var in formula.variables()}
 
     assert state == correct_state, "Got state: " + str(state)
 
     if state == UNSAT:
         print("Correct - The formula" + str(formula) + " has no satisfiable assignment.")
     else:
-        assert evaluate(formula, model), "Got model: " + str(model)
+        assert evaluate(formula, original_model), "Got model: " + str(model)
         print("Correct - The formula " + str(formula) + " is satisfiable with the assignment: " + str(model))
 
 
