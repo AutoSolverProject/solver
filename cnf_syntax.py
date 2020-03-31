@@ -3,7 +3,7 @@ import math
 from collections import defaultdict
 
 from typing import List, Set
-from propositional_logic.syntax import Formula as PropositionalFormula
+from propositional_logic.syntax import Formula as PropositionalFormula, is_variable
 from propositional_logic.semantics import Model
 
 
@@ -174,14 +174,14 @@ class CNFFormula:
 
     def __init__(self, clauses: List[CNFClause]):
         self.clauses = clauses
-        self.var_to_containing_clause = dict()
+        self.literal_to_containing_clause = dict()
         self.last_result = SAT_UNKNOWN
 
         for clause in self.clauses:
             for var in clause.get_all_variables():
-                current_clauses = self.var_to_containing_clause.get(var, set())
+                current_clauses = self.literal_to_containing_clause.get(var, set())
                 current_clauses.add(clause)
-                self.var_to_containing_clause[var] = current_clauses
+                self.literal_to_containing_clause[var] = current_clauses
 
 
     def __repr__(self) -> str:
@@ -218,12 +218,12 @@ class CNFFormula:
 
 
     def get_all_variables(self) -> Set[str]:
-        return set(self.var_to_containing_clause.keys())
+        return {literal for literal in self.literal_to_containing_clause.keys() if is_variable(literal)}
 
 
     def count_clauses_satisfied_by_assignment(self, variable: str, assignment: bool):
         sat_counter = 0
-        for clause in self.var_to_containing_clause[variable]:
+        for clause in self.literal_to_containing_clause[variable]:
             sat_value = clause.is_satisfied_under_assignment(variable, assignment)
             if sat_value == SAT:
                 sat_counter += 1
@@ -243,9 +243,9 @@ class CNFFormula:
     def add_clause(self, new_clause: CNFClause):
         self.clauses.append(new_clause)
         for var in new_clause.get_all_variables():
-            current_clauses = self.var_to_containing_clause.get(var, set())
+            current_clauses = self.literal_to_containing_clause.get(var, set())
             current_clauses.add(new_clause)
-            self.var_to_containing_clause[var] = current_clauses
+            self.literal_to_containing_clause[var] = current_clauses
 
 
     def on_backjump(self, model: Model):
@@ -281,7 +281,7 @@ class CNFFormula:
         found_unsat = None
         inferred_assignment = SAT_UNKNOWN  # If we got one inferred assignment, we'll return it. Otherwise, we'll return SAT_UNKNOWN
 
-        for clause in self.var_to_containing_clause[variable]:
+        for clause in self.literal_to_containing_clause[variable]:
             result = clause.update_with_new_assignment(variable, assignment, model)
 
             if result == UNSAT:
@@ -352,6 +352,7 @@ class ImplicationGraph:
 
 
     def add_decision(self, variable, assignment):
+        assert is_variable(variable)
         assert variable not in self.total_model.keys()
 
         self.curr_level += 1
@@ -362,6 +363,7 @@ class ImplicationGraph:
 
 
     def add_inference(self, variable: str, assignment: bool, causing_clause: int):
+        assert is_variable(variable)
         assert variable not in self.total_model.keys()
 
         self.inferred_variables[-1].update({variable: assignment})
@@ -370,14 +372,17 @@ class ImplicationGraph:
 
 
     def get_index_of_causing_clause_of_variable(self, variable: str) -> int:
+        assert is_variable(variable)
         return self.causing_clauses[variable][0]
 
 
     def get_decision_level_of_variable(self, variable: str) -> int:
+        assert is_variable(variable)
         return self.causing_clauses[variable][1]
 
 
     def get_causing_variables(self, cnf_formula: CNFFormula, variable: str) -> Set[str]:
+        assert is_variable(variable)
         causing_variables = set()
         causing_clause_index = self.get_index_of_causing_clause_of_variable(variable)
 

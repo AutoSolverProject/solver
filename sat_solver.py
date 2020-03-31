@@ -127,7 +127,7 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
 
         # No need to check ret value - we never choose a variable that'll cause UNSAT
         cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment, implication_graph.total_model)
-        sat_value = BCP(cnf_formula, implication_graph)
+        sat_value, implication_graph = BCP(cnf_formula, implication_graph)
 
         if sat_value == UNSAT:
             if implication_graph.curr_level == 0:
