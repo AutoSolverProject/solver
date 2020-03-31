@@ -2,7 +2,6 @@ import copy
 import math
 from collections import defaultdict
 
-from logic_utils import frozen
 from typing import List, Set
 from propositional_logic.syntax import Formula as PropositionalFormula
 from propositional_logic.semantics import Model
@@ -13,7 +12,6 @@ SAT = "SAT"
 SAT_UNKNOWN = "UNKNOWN"
 
 
-@frozen
 class CNFClause:
 
     def __init__(self, positive_literals: Set[str] = None, negative_literals: Set[str] = None):
@@ -44,14 +42,14 @@ class CNFClause:
             my_repr += str(pos_literals_list[0])
             first_pos = 1
         elif len(neg_literals_list) > 0:
-            my_repr += "~" + str(neg_literals_list[0])
+            my_repr += str(neg_literals_list[0])
             first_neg = 1
 
         for pos_index in range(first_pos, len(pos_literals_list)):
             my_repr += "|" + str(pos_literals_list[pos_index]) + ")"
 
         for neg_index in range(first_neg, len(neg_literals_list)):
-            my_repr += "|" + "~" + str(neg_literals_list[neg_index]) + ")"
+            my_repr += "|" + str(neg_literals_list[neg_index]) + ")"
 
         return my_repr
 
@@ -139,7 +137,7 @@ class CNFClause:
             self.watched_literals = set()
             return SAT
 
-        # NOTE: If we're here, the assigned variable is either not in our clause, OR the assignment does not satisfying us
+        # NOTE: If we're here, the assigned variable is either not in our clause, OR the assignment is not satisfying us
 
         if self.inferred_assignment is not None and self.inferred_assignment[0] == variable:
             self.is_sat = UNSAT  # When we have an inferred variable, the only chance we'll be SAT is if it's assigned correctly
@@ -172,7 +170,6 @@ class CNFClause:
                 self.inferred_assignment = inferred_variable, self.all_literals[inferred_variable]
 
 
-@frozen
 class CNFFormula:
 
     def __init__(self, clauses: List[CNFClause]):
@@ -217,6 +214,7 @@ class CNFFormula:
 
 
     def to_PropositionalFormula(self) -> PropositionalFormula:
+        print(str(self))
         return PropositionalFormula.parse(str(self))
 
 

@@ -52,6 +52,8 @@ def is_trivial_clause(cnf_clause: CNFClause) -> bool:
 # region Tseitin transformation
 
 def tseitin_transformation(propositional_formula: PropositionalFormula) -> CNFFormula:
+    if test_is_cnf(propositional_formula):
+        return propositional_formula_to_CNFFormula(propositional_formula)
     nnf_formula = to_nnf(propositional_formula)  # Simplifying assumption - no cases like: ~~~~~~~~~p<->q
     representations = give_representation_to_sub_formulae(nnf_formula)
 
@@ -146,11 +148,11 @@ def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
     result = cnf_formula.last_result
 
     if result in [SAT, SAT_UNKNOWN]:
-        return result
+        return result, implication_graph
 
     elif result[0] == UNSAT:
         implication_graph.conflict_clause = result[1]
-        return UNSAT
+        return UNSAT, implication_graph
 
     else:  # We got an inferred assignment
         variable, assignment, causing_clause = result

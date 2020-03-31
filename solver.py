@@ -31,12 +31,12 @@ def test_sat_solver():
     formula_2 = PropositionalFormula.parse('(~p2&(p2|((p1<->p3)->p2)))')
     correct_state_2 = SAT
     assert is_satisfiable(formula_2)
-    test_2 = formula_2, correct_state_2
+    test_3 = formula_2, correct_state_2
 
     formula_3 = PropositionalFormula.parse('(x1&((~x1|x2)&((~x3|x4)&((~x5|~x6)&((~x1|(~x5|x7))&((~x2|~x5)|(x6|~x7)))))))')
     correct_state_3 = SAT
     assert is_satisfiable(formula_2)
-    test_3 = formula_3, correct_state_3
+    test_2 = formula_3, correct_state_3
 
     tests = [test_1, test_2, test_3]
 

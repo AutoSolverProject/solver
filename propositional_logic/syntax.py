@@ -194,11 +194,11 @@ class Formula:
 
         if len(s) == 0:
             return None, "Can't parse Formula from empty string."
-        if is_constant(s[0]) or (is_variable(s[0]) and (len(s) == 1 or not s[1].isdigit())):
+        if is_constant(s[0]) or (is_variable(s[0]) and (len(s) == 1 or not s[1].isalnum())):
             return Formula(s[0]), s[1:] if len(s) > 1 else ''
         elif is_variable(s[0]):
             i = 1
-            while i < len(s) and s[i].isdigit():
+            while i < len(s) and s[i].isalnum():
                 i += 1
             return Formula(s[:i]), s[i:] if len(s) > 1 else ''
         elif is_unary(s[0]):

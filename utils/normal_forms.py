@@ -98,7 +98,7 @@ def to_cnf(formula, debug=normal_forms_DEBUG):
 
         if is_unary(in_nnf_form.root):  # in_nnf_form is in nnf form, so it must be a literal
             in_cnf_form = in_nnf_form
-        elif not contains_and(formula):  # in_nnf_form is in nnf form, so if it has no "AND" it's just a clause
+        elif not contains_and(in_nnf_form):  # in_nnf_form is in nnf form, so if it has no "AND" it's just a clause
             in_cnf_form = in_nnf_form
         else:
             in_cnf_form = to_cnf_from_nnf(in_nnf_form)
@@ -116,34 +116,83 @@ def to_cnf_from_nnf(in_nnf_form):
     if in_nnf_form.root == '&':
         return Formula('&', to_cnf_from_nnf(in_nnf_form.first), to_cnf_from_nnf(in_nnf_form.second))
     else:  # in_nnf_form.root == '|'
-        if contains_and(in_nnf_form.first):
-            return to_cnf_on_left(in_nnf_form)
-        else:  # contains "AND" in in_nnf_form.second
-            return to_cnf_on_right(in_nnf_form)
+        if contains_and(in_nnf_form.first) or contains_and(in_nnf_form.second):
+            first = to_cnf_from_nnf(in_nnf_form.first)
+            second = to_cnf_from_nnf(in_nnf_form.second)
+            first_clauses = get_clauses(first)
+            second_clauses = get_clauses(second)
+            new_clauses = set()
+            for first_clause in first_clauses:
+                for second_clause in second_clauses:
+                    new_clauses.add(Formula('|', first_clause, second_clause))
+            new_formula = None
+            for clause in new_clauses:
+                if new_formula is None:
+                    new_formula = clause
+                else:
+                    new_formula = Formula('&', new_formula, clause)
+            return new_formula
+        else:  # in_nnf_form is just a clause
+            return in_nnf_form
 
 
-def to_cnf_on_left(formula):
-    # ￿TODO: check!
-    a, b = formula.first, formula.second
-    a = to_cnf_from_nnf(a)
-    c, d = a.first, a.second
-    first = Formula('|', c, b)
-    second = Formula('|', d, b)
-    return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
-
-
-def to_cnf_on_right(formula):
-    # ￿TODO: check!
-    a, b = formula.first, formula.second
-    b = to_cnf_from_nnf(b)
-    c, d = b.first, b.second
-    first = Formula('|', a, c)
-    second = Formula('|', a, d)
-    if contains_and(c):
-        first = to_cnf_on_right(first)
-    if contains_and(d):
-        second = to_cnf_on_right(second)
-    return Formula('&', first, second)
+# def to_cnf(formula, debug=normal_forms_DEBUG):
+#     if is_literal(formula):
+#         in_cnf_form = formula
+#
+#     else:
+#         in_nnf_form = to_nnf(formula, debug=debug)
+#
+#         if is_unary(in_nnf_form.root):  # in_nnf_form is in nnf form, so it must be a literal
+#             in_cnf_form = in_nnf_form
+#         elif not contains_and(in_nnf_form):  # in_nnf_form is in nnf form, so if it has no "AND" it's just a clause
+#             in_cnf_form = in_nnf_form
+#         else:
+#             in_cnf_form = to_cnf_from_nnf(in_nnf_form)
+#
+#     if debug:
+#         assert test_is_cnf(in_cnf_form)
+#
+#     return in_cnf_form
+#
+#
+# def to_cnf_from_nnf(in_nnf_form):
+#     if is_literal(in_nnf_form):
+#         return in_nnf_form
+#
+#     if in_nnf_form.root == '&':
+#         return Formula('&', to_cnf_from_nnf(in_nnf_form.first), to_cnf_from_nnf(in_nnf_form.second))
+#     else:  # in_nnf_form.root == '|'
+#         if contains_and(in_nnf_form.first):
+#             return to_cnf_on_left(in_nnf_form)
+#         elif contains_and(in_nnf_form.second):  # contains "AND" in in_nnf_form.second
+#             return to_cnf_on_right(in_nnf_form)
+#         else:
+#             return in_nnf_form
+#
+#
+# def to_cnf_on_left(formula):
+#     # ￿TODO: check!
+#     a, b = formula.first, formula.second
+#     a = to_cnf_from_nnf(a)
+#     c, d = a.first, a.second
+#     first = Formula('|', c, b)
+#     second = Formula('|', d, b)
+#     return Formula('&', to_cnf_from_nnf(first), to_cnf_from_nnf(second))
+#
+#
+# def to_cnf_on_right(formula):
+#     # ￿TODO: check!
+#     a, b = formula.first, formula.second
+#     b = to_cnf_from_nnf(b)
+#     c, d = b.first, b.second
+#     first = Formula('|', a, c)
+#     second = Formula('|', a, d)
+#     if contains_and(c):
+#         first = to_cnf_on_right(first)
+#     if contains_and(d):
+#         second = to_cnf_on_right(second)
+#     return Formula('&', first, second)
 
 
 def contains_and(formula):
@@ -156,6 +205,13 @@ def contains_and(formula):
         return True
     else:
         return contains_and(formula.first) or contains_and(formula.second)
+
+
+def get_clauses(formula):
+    if is_literal(formula) or formula.root == '|':   # formula is a clause
+        return {formula}
+    else:   # formula is cnf
+        return get_clauses(formula.first) | get_clauses(formula.second)
 
 
 # region Tests
@@ -180,7 +236,8 @@ def test_is_cnf(formula):
         return True
     elif formula.root == '&':
         return test_is_cnf(formula.first) and test_is_cnf(formula.second)
-    return not (contains_and(formula.first) or contains_and(formula.second))
+    else:
+        return not contains_and(formula)
 
 
 # endregion
