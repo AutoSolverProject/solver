@@ -124,7 +124,6 @@ class CNFClause:
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool):
-        # todo
         if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
             return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
@@ -232,7 +231,6 @@ class CNFFormula:
 
 
     def count_clauses_satisfied_by_assignment(self, variable: str, assignment: bool):
-        # todo
         assert is_variable(variable)
         sat_counter = 0
         for clause in self.variable_to_containing_clause[variable]:
@@ -242,16 +240,6 @@ class CNFFormula:
             elif sat_value == UNSAT:
                 return UNSAT
         return sat_counter
-
-
-    def is_satisfied_under_assignment(self, variable: str, assignment: bool) -> str:
-        # todo
-        assert is_variable(variable)
-        num_satisfied = self.count_clauses_satisfied_by_assignment(variable, assignment)
-        if num_satisfied == UNSAT:
-            return UNSAT
-
-        return SAT if num_satisfied == len(self.clauses) else SAT_UNKNOWN
 
 
     def add_clause(self, new_clause: CNFClause):
