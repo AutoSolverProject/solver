@@ -1,6 +1,6 @@
 from cnf_syntax import *
 from cnf_syntax import UNSAT, SAT, SAT_UNKNOWN
-from logic_utils import __prefix_with_index_sequence_generator
+from logic_utils import __prefix_with_index_sequence_generator, fresh_variable_name_generator
 from utils.normal_forms import *
 from propositional_logic.syntax import Formula as PropositionalFormula
 from typing import Dict, Tuple
@@ -78,7 +78,7 @@ def tseitin_transformation(propositional_formula: PropositionalFormula) -> CNFFo
 
 def give_representation_to_sub_formulae(propositional_formula: PropositionalFormula) -> Dict[PropositionalFormula, PropositionalFormula]:
     all_sub_formulae = find_closure(propositional_formula)
-    rep_generator = __prefix_with_index_sequence_generator('pg')
+    rep_generator = fresh_variable_name_generator
     representation = dict()
 
     for sub_formula in all_sub_formulae:
