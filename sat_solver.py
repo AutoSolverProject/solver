@@ -136,7 +136,7 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
             if implication_graph.curr_level == 0:
                 break
             else:
-                backjump_level, conflict_clause = analyze_conflict(cnf_formula, implication_graph)
+                backjump_level, conflict_clause = analyze_conflict(implication_graph)
                 cnf_formula.add_clause(conflict_clause)
                 implication_graph.backjump_to_level(backjump_level)
                 cnf_formula.on_backjump(implication_graph.total_model)
@@ -164,8 +164,8 @@ def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
         return BCP(cnf_formula, implication_graph)  # Return result of BCP on the model that includes the inference
 
 
-def analyze_conflict(cnf_formula: CNFFormula, implication_graph: ImplicationGraph) -> Tuple[int, CNFClause]:
-    conflict_clause = implication_graph.learn_conflict_clause(cnf_formula)
+def analyze_conflict(implication_graph: ImplicationGraph) -> Tuple[int, CNFClause]:
+    conflict_clause = implication_graph.learn_conflict_clause()
 
     decision_levels_of_clause_vars = {implication_graph.get_decision_level_of_variable(variable) for variable in conflict_clause.get_all_variables()}
 

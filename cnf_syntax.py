@@ -311,8 +311,6 @@ class CNFFormula:
 
 class ImplicationGraph:
 
-    CAUSING_CLAUSE_OF_DECIDED_VARIABLES = -1
-
 
     def __init__(self, decided_variables: Model = None):
         decided_variables = dict(decided_variables) if decided_variables is not None else dict()
@@ -324,7 +322,7 @@ class ImplicationGraph:
         self.total_model = dict()
         self.total_model.update(decided_variables)
         # Map each inferred variable to the clause that caused it, and at which level that was
-        self.causing_clauses = {variable: (ImplicationGraph.CAUSING_CLAUSE_OF_DECIDED_VARIABLES, self.curr_level) for variable in decided_variables.keys()}
+        self.causing_clauses = {variable: (None, self.curr_level) for variable in decided_variables.keys()}
 
 
     def __repr__(self) -> str:
@@ -364,10 +362,10 @@ class ImplicationGraph:
         self.decision_variables.append({variable: assignment})
         self.inferred_variables.append(dict())
         self.total_model[variable] = assignment
-        self.causing_clauses[variable] = (ImplicationGraph.CAUSING_CLAUSE_OF_DECIDED_VARIABLES, self.curr_level)
+        self.causing_clauses[variable] = (None, self.curr_level)
 
 
-    def add_inference(self, variable: str, assignment: bool, causing_clause: int):
+    def add_inference(self, variable: str, assignment: bool, causing_clause: CNFClause):
         assert is_variable(variable)
         assert variable not in self.total_model.keys()
 
@@ -376,7 +374,7 @@ class ImplicationGraph:
         self.causing_clauses[variable] = (causing_clause, self.curr_level)
 
 
-    def get_index_of_causing_clause_of_variable(self, variable: str) -> int:
+    def get_causing_clause_of_variable(self, variable: str) -> CNFClause:
         assert is_variable(variable)
         return self.causing_clauses[variable][0]
 
@@ -386,31 +384,24 @@ class ImplicationGraph:
         return self.causing_clauses[variable][1]
 
 
-    def get_causing_variables(self, cnf_formula: CNFFormula, variable: str) -> Set[str]:
+    def get_causing_variables(self, variable: str) -> Set[str]:
         assert is_variable(variable)
-        causing_variables = set()
-        causing_clause_index = self.get_index_of_causing_clause_of_variable(variable)
-
-        if causing_clause_index != ImplicationGraph.CAUSING_CLAUSE_OF_DECIDED_VARIABLES:
-            causing_clause = cnf_formula.clauses[causing_clause_index]
-            causing_variables = causing_clause.get_all_variables()
-
-        return causing_variables
+        causing_clause = self.get_causing_clause_of_variable(variable)
+        return causing_clause.get_all_variables() if causing_clause is not None else set()
 
 
-    def learn_conflict_clause(self, cnf_formula: CNFFormula) -> CNFClause:
-        uip = self.find_uip(cnf_formula)
+    def learn_conflict_clause(self) -> CNFClause:
+        uip = self.find_uip()
         uip_assignment = self.total_model[uip]
         conflict_clause = self.conflict_clause
 
         while not conflict_clause.is_contain_negation_of_literal(uip, uip_assignment):
-            conflict_clause = self.resolve(cnf_formula, conflict_clause)
+            conflict_clause = self.resolve(conflict_clause)
 
         return conflict_clause
 
 
-    def find_uip(self, cnf_formula: CNFFormula) -> str:
-        # todo: fix
+    def find_uip(self) -> str:
         assert self.conflict_clause is not None
         assert self.curr_level >= 1
 
@@ -432,13 +423,15 @@ class ImplicationGraph:
                         potential_uips_distances[curr_node] = curr_node_dist
 
             else:
-                for parent in self.get_causing_variables(cnf_formula, current_node):
+                for parent in self.get_causing_variables(current_node):
                     if parent not in current_path:  # Avoid loop, even though we shouldn't have any - just in case
                         dfs_helper(parent)
                 current_path.pop()
 
+        for var in self.conflict_clause.get_all_variables():  # todo: not sure of this line
+            dfs_helper(var)
 
-        dfs_helper(self.conflict_clause)  # Now we have all uips, and their distances
+        # After the dfs we have all possible uips and their distances
 
         assert len(potential_uips) >= 1  # The decision variable is a UIP, so there's at least one
 
@@ -453,10 +446,9 @@ class ImplicationGraph:
         return closest_uip
 
 
-    def resolve(self, cnf_formula: CNFFormula, clause_to_resolve: CNFClause) -> CNFClause:
+    def resolve(self, clause_to_resolve: CNFClause) -> CNFClause:
         last_assigned_var = self.get_last_assigned_var(clause_to_resolve)
-        last_assigned_var_causing_clause_index = self.get_index_of_causing_clause_of_variable(last_assigned_var)
-        last_assigned_var_causing_clause = cnf_formula.clauses[last_assigned_var_causing_clause_index]
+        last_assigned_var_causing_clause = self.get_causing_clause_of_variable(last_assigned_var)
 
         vars_to_resolve = (clause_to_resolve.positive_literals & last_assigned_var_causing_clause.negative_literals) | \
                           (clause_to_resolve.negative_literals & last_assigned_var_causing_clause.positive_literals)
