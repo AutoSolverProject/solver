@@ -65,7 +65,7 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_rounds: int = 5, d
 
         if sat_value == UNSAT:
             if implication_graph.curr_decision_level == 0:
-                return sat_value, implication_graph.total_model, cnf_formula
+                break
             else:
                 backjump_level, conflict_clause = analyze_conflict(implication_graph)
                 cnf_formula.add_clause(conflict_clause)
@@ -75,11 +75,13 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_rounds: int = 5, d
 
         elif sat_value == SAT:
             if max_rounds != CONTINUE_UNTIL_MODEL_FULL or cnf_formula.get_all_variables().issubset(implication_graph.total_model.keys()):
-                return sat_value, implication_graph.total_model, cnf_formula
+                break
 
         chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
         implication_graph.add_decision(chosen_variable, chosen_assignment)
         cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment, implication_graph.total_model)
+
+    return sat_value, implication_graph.total_model, cnf_formula
 
 
 # region Pre-processing
