@@ -23,3 +23,12 @@ For the project we authored the following files:
     - Makefile
 
 
+To run the solver, open shell (in Linux) or cmd prompt (in Windows), in the folder of the project, and type:
+---- python3 main.py
+
+To run the naive_lp_solver, open shell (in Linux) or cmd prompt (in Windows), in the folder of the project, and type:
+---- make
+(make clean - will delete the compiled files)
+Additionally to edit the problem the naive_lp_solver solves, open the naive_lp_solver.cpp file, change the values
+of n and m, where n is the number of variables in the objective and m is the number of constraint equations/inequations,
+and change the values in the function readInputProblem.
