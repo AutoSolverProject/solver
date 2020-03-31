@@ -144,44 +144,6 @@ def give_representation_to_sub_formulae(propositional_formula: PropositionalForm
 # endregion
 
 
-def decide_old(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: int = 5, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
-    implication_graph = ImplicationGraph(partial_model)
-    cnf_formula.on_backjump(implication_graph.total_model)  # Initial loading
-
-    # Decision level zero:
-    sat_value, implication_graph = BCP(cnf_formula, implication_graph)
-    if sat_value == UNSAT:
-        return sat_value, implication_graph.total_model, cnf_formula
-    elif sat_value == SAT:
-        if max_decision_levels != CONTINUE_UNTIL_MODEL_FULL or cnf_formula.get_all_variables().issubset(implication_graph.total_model.keys()):
-            return sat_value, implication_graph.total_model, cnf_formula
-
-    cur_decision_level = 0
-    while cur_decision_level < max_decision_levels or max_decision_levels == CONTINUE_UNTIL_MODEL_FULL:
-        cur_decision_level += 1
-
-        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
-        implication_graph.add_decision(chosen_variable, chosen_assignment)
-
-        cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment, implication_graph.total_model)
-        sat_value, implication_graph = BCP(cnf_formula, implication_graph)
-
-        if sat_value == UNSAT:
-            if implication_graph.curr_decision_level == 0:
-                break
-            else:
-                backjump_level, conflict_clause = analyze_conflict(implication_graph)
-                cnf_formula.add_clause(conflict_clause)
-                implication_graph.backjump_to_level(backjump_level)
-                cnf_formula.on_backjump(implication_graph.total_model)
-
-        elif sat_value == SAT:
-            if max_decision_levels != CONTINUE_UNTIL_MODEL_FULL or cnf_formula.get_all_variables().issubset(implication_graph.total_model.keys()):
-                break
-
-    return sat_value, implication_graph.total_model, cnf_formula
-
-
 def BCP(cnf_formula: CNFFormula, implication_graph: ImplicationGraph):
     result = cnf_formula.last_result
 
