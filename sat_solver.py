@@ -175,5 +175,6 @@ def analyze_conflict(implication_graph: ImplicationGraph) -> Tuple[int, CNFClaus
     decision_levels_of_clause_vars_sorted = sorted(list(decision_levels_of_clause_vars))
     backjump_level = decision_levels_of_clause_vars_sorted[-2]
 
+    implication_graph.conflict_clause = None
     return backjump_level, conflict_clause
 

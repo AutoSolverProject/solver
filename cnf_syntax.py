@@ -309,7 +309,6 @@ class CNFFormula:
 
 class ImplicationGraph:
 
-
     def __init__(self, decided_variables: Model = None):
         decided_variables = dict(decided_variables) if decided_variables is not None else dict()
 
