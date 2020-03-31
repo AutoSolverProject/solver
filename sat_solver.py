@@ -98,20 +98,18 @@ def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
     possible_assignments = (True, False)
     candidates = cnf_formula.get_all_variables() - set(model.keys())  # Starting with all unassigned variables
 
-    best_candidate = UNSAT
-    best_candidate_assignment = UNSAT
-    best_candidate_score = 0  # There's a satisfying assigment for any none-empty clause, so 0 is the minimum
+    best_candidate = ""
+    best_candidate_assignment = ""
+    best_candidate_score = -1
 
     for cur_candidate in candidates:
         for cur_assignment in possible_assignments:
             cur_score = cnf_formula.count_clauses_satisfied_by_assignment(cur_candidate, cur_assignment)
-            if cur_score != UNSAT and cur_score > best_candidate_score:  # Taking the best decision that won't make a clause UNSAT
+            if cur_score > best_candidate_score:  # Taking the best decision that won't make a clause UNSAT
                 best_candidate = cur_candidate
                 best_candidate_assignment = cur_assignment
                 best_candidate_score = cur_score
 
-    assert best_candidate != UNSAT
-    assert best_candidate_assignment != UNSAT
     return best_candidate, best_candidate_assignment
 
 

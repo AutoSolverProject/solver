@@ -121,7 +121,7 @@ class CNFClause:
             self.is_sat = SAT_UNKNOWN
 
 
-    def is_satisfied_under_assignment(self, variable: str, assignment: bool):
+    def sat_value_under_assignment(self, variable: str, assignment: bool):
         if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
             return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
@@ -132,6 +132,10 @@ class CNFClause:
             return SAT
 
         return SAT_UNKNOWN
+
+
+    def is_satisfied_under_assignment(self, variable: str, assignment: bool) -> bool:
+        return self.all_literals.get(variable, not assignment) == assignment
 
 
     def update_with_new_assignment(self, variable: str, assignment: bool, model: Model):
@@ -232,11 +236,8 @@ class CNFFormula:
         assert is_variable(variable)
         sat_counter = 0
         for clause in self.variable_to_containing_clause[variable]:
-            sat_value = clause.is_satisfied_under_assignment(variable, assignment)
-            if sat_value == SAT:
+            if clause.is_satisfied_under_assignment(variable, assignment):
                 sat_counter += 1
-            elif sat_value == UNSAT:
-                return UNSAT
         return sat_counter
 
 
@@ -301,8 +302,13 @@ class CNFFormula:
 
         if found_unsat is not None:
             self.last_result = UNSAT, found_unsat
-        elif are_all_sat:
-            self.last_result = SAT
+
+        elif are_all_sat:  # Only if all clauses containing the last assigned var are SAT, bother checking all the rest are SAT, and if not put SAT_UNKOWN
+            for clause in self.clauses:
+                if clause.is_sat != SAT:
+                    are_all_sat = False
+            self.last_result = SAT if are_all_sat else SAT_UNKNOWN
+
         else:
             self.last_result = inferred_assignment
 
