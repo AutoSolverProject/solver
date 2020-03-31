@@ -24,25 +24,28 @@ def test_sat_solver_on_single_formula(formula, correct_state):
 
 def test_sat_solver():
     # For writing new tests, can use the function is_satisfiable for calculating the correct_state
+    tests = list()
 
     formula_1 = PropositionalFormula.parse('((p&~q)&(p<->q))')
     correct_state_1 = UNSAT
     assert is_contradiction(formula_1)
     test_1 = formula_1, correct_state_1
+    # tests.append(test_1)
 
     formula_2 = PropositionalFormula.parse('(~p2&(p2|((p1<->p3)->p2)))')
     correct_state_2 = SAT
     assert is_satisfiable(formula_2)
     test_2 = formula_2, correct_state_2
+    tests.append(test_2)
 
     formula_3 = PropositionalFormula.parse('(x1&((~x1|x2)&((~x3|x4)&((~x5|~x6)&((~x1|(~x5|x7))&((~x2|~x5)|(x6|~x7)))))))')
     correct_state_3 = SAT
     assert is_satisfiable(formula_2)
     test_3 = formula_3, correct_state_3
-
-    tests = [test_1, test_2, test_3]
+    tests.append(test_3)
 
     print("\n\n\nVerify sat_solver by running it on propositional formulae.")
+
     for test_index, (formula, correct_state) in enumerate(tests):
         print("\n\nTest number: " + str(test_index))
         print("Checking that " + str(formula) + " is found to be " + correct_state)
