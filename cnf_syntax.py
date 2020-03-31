@@ -47,7 +47,7 @@ class CNFClause:
             my_repr += str(pos_literals_list[0])
             first_pos = 1
         elif len(neg_literals_list) > 0:
-            my_repr += str(neg_literals_list[0])
+            my_repr += "~" + str(neg_literals_list[0])
             first_neg = 1
 
         for pos_index in range(first_pos, len(pos_literals_list)):
