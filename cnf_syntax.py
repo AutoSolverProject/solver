@@ -318,19 +318,19 @@ class ImplicationGraph:
     def __init__(self, decided_variables: Model = None):
         decided_variables = dict(decided_variables) if decided_variables is not None else dict()
 
-        self.curr_level = 0
+        self.curr_decision_level = 0
         self.conflict_clause = None
         self.decision_variables = [decided_variables]
         self.inferred_variables = [dict()]
         self.total_model = dict()
         self.total_model.update(decided_variables)
         # Map each inferred variable to the clause that caused it, and at which level that was
-        self.causing_clauses = {variable: (None, self.curr_level) for variable in decided_variables.keys()}
+        self.causing_clauses = {variable: (None, self.curr_decision_level) for variable in decided_variables.keys()}
 
 
     def __repr__(self) -> str:
         my_repr = ""
-        for i in range(self.curr_level):
+        for i in range(self.curr_decision_level):
             my_repr += "LEVEL " + str(i) + ": " + "\n" \
                         + "Decided: " + str(self.decision_variables[i]) + "\n" \
                         + "Inferred: " + str(self.inferred_variables[i]) + "\n"
@@ -341,7 +341,7 @@ class ImplicationGraph:
         return isinstance(other, ImplicationGraph) \
                and self.decision_variables == other.decision_variables \
                and self.inferred_variables == other.inferred_variables \
-               and self.curr_level == other.curr_level \
+               and self.curr_decision_level == other.curr_decision_level \
                and self.causing_clauses == other.causing_clauses
 
 
@@ -354,18 +354,18 @@ class ImplicationGraph:
 
 
     def __len__(self):
-        return self.curr_level
+        return self.curr_decision_level
 
 
     def add_decision(self, variable, assignment):
         assert is_variable(variable)
         assert variable not in self.total_model.keys()
 
-        self.curr_level += 1
+        self.curr_decision_level += 1
         self.decision_variables.append({variable: assignment})
         self.inferred_variables.append(dict())
         self.total_model[variable] = assignment
-        self.causing_clauses[variable] = (None, self.curr_level)
+        self.causing_clauses[variable] = (None, self.curr_decision_level)
 
 
     def add_inference(self, variable: str, assignment: bool, causing_clause: CNFClause):
@@ -374,7 +374,7 @@ class ImplicationGraph:
 
         self.inferred_variables[-1].update({variable: assignment})
         self.total_model[variable] = assignment
-        self.causing_clauses[variable] = (causing_clause, self.curr_level)
+        self.causing_clauses[variable] = (causing_clause, self.curr_decision_level)
 
 
     def get_causing_clause_of_variable(self, variable: str) -> CNFClause:
@@ -406,7 +406,7 @@ class ImplicationGraph:
 
     def find_uip(self) -> str:
         assert self.conflict_clause is not None
-        assert self.curr_level >= 1
+        assert self.curr_decision_level >= 1
 
         last_decision_variable = list(self.decision_variables[-1].keys())[0]  # List of dict only for level 0. From lvl. 1 always 1 decision var per level
         potential_uips = set(self.total_model.keys())
@@ -478,16 +478,16 @@ class ImplicationGraph:
 
     def backjump_to_level(self, new_level):
         assert 0 <= new_level
-        assert new_level < self.curr_level
+        assert new_level < self.curr_decision_level
 
-        self.curr_level = new_level
+        self.curr_decision_level = new_level
         self.conflict_clause = None
-        self.decision_variables = self.decision_variables[:self.curr_level + 1]
-        self.inferred_variables = self.inferred_variables[:self.curr_level + 1]
+        self.decision_variables = self.decision_variables[:self.curr_decision_level + 1]
+        self.inferred_variables = self.inferred_variables[:self.curr_decision_level + 1]
 
         all_vars_before_backjump = set(self.total_model.keys())
         self.total_model = dict()
-        for i in range(self.curr_level + 1):
+        for i in range(self.curr_decision_level + 1):
             self.total_model.update(self.decision_variables[i])
             self.total_model.update(self.inferred_variables[i])
         all_vars_after_backjump = set(self.total_model.keys())

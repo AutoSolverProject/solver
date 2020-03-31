@@ -7,7 +7,7 @@ from utils.formula_utils import *
 
 
 def test_sat_solver_on_single_formula(formula, correct_state):
-    state, model, new_formula = sat_solver(formula, max_decision_levels=CONTINUE_UNTIL_MODEL_FULL)
+    state, model, new_formula = sat_solver(formula, max_rounds=CONTINUE_UNTIL_MODEL_FULL)
 
     assert state == correct_state, "Got state: " + str(state)
 

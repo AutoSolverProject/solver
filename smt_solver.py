@@ -7,7 +7,7 @@ from disjoint_set_tree import *
 
 def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
     skeleton, substitution_map = formula.propositional_skeleton()
-    state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, max_decision_levels=1)
+    state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, max_rounds=1)
 
     while state != UNSAT:
 
@@ -20,7 +20,7 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
         elif not congruence_closure_unviolated:
             conflict = get_conflict(model_over_skeleton)
             state, model_over_skeleton, updated_skeleton = \
-                sat_solver(skeleton, partial_model=model_over_skeleton, conflict=conflict, max_decision_levels=1)
+                sat_solver(skeleton, partial_model=model_over_skeleton, conflict=conflict, max_rounds=1)
 
         else:
             model_over_formula = t_propagate(model_over_formula, formula)
@@ -28,7 +28,7 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
             for k, v in substitution_map.items():
                 if v in model_over_formula.keys() and model_over_formula[v]:
                     model_over_skeleton[k] = True
-            state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, partial_model=model_over_skeleton, max_decision_levels=1)
+            state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, partial_model=model_over_skeleton, max_rounds=1)
     return UNSAT, model_over_skeleton
 
 
