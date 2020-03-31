@@ -38,7 +38,7 @@ def test_sat_solver():
     assert is_satisfiable(formula_2)
     test_3 = formula_3, correct_state_3
 
-    tests = [test_1, test_2, test_3]
+    tests = [test_2, test_3]
 
     print("\n\n\nVerify sat_solver by running it on propositional formulae.")
     for test_index, (formula, correct_state) in enumerate(tests):
