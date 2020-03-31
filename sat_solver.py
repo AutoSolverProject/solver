@@ -9,7 +9,26 @@ from typing import Dict, Tuple
 CONTINUE_UNTIL_MODEL_FULL = -1
 
 
-def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_levels=5) \
+def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
+    possible_assignments = (True, False)
+    candidates = cnf_formula.get_all_variables() - set(model.keys())  # Starting with all unassigned variables
+
+    best_candidate = ""
+    best_candidate_assignment = ""
+    best_candidate_score = -1
+
+    for cur_candidate in candidates:
+        for cur_assignment in possible_assignments:
+            cur_score = cnf_formula.count_clauses_satisfied_by_assignment(cur_candidate, cur_assignment)
+            if cur_score > best_candidate_score:  # Taking the best decision that won't make a clause UNSAT
+                best_candidate = cur_candidate
+                best_candidate_assignment = cur_assignment
+                best_candidate_score = cur_score
+
+    return best_candidate, best_candidate_assignment
+
+
+def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_rounds=5) \
         -> Tuple[str, Model, PropositionalFormula]:
     if partial_model is None:
         partial_model = dict()
@@ -27,12 +46,40 @@ def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, 
         for conflict_CNFClause in conflict_CNFFormula.clauses:
             cnf_formula.add_clause(conflict_CNFClause)
 
-    result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_decision_levels=max_decision_levels)
+    result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_rounds=max_rounds)
 
     equisatisfiable_PropositionalFormula = equisatisfiable_CNFFormula.to_PropositionalFormula()
     original_model = {var: assignment for var, assignment in model.items() if var in propositional_formula.variables()}
 
     return result, original_model, equisatisfiable_PropositionalFormula
+
+
+def decide(cnf_formula: CNFFormula, partial_model: Model, max_rounds: int = 5, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
+    implication_graph = ImplicationGraph(partial_model)
+    cnf_formula.on_backjump(implication_graph.total_model)  # Initial loading
+
+    curr_round = 0
+    while curr_round < max_rounds or max_rounds == CONTINUE_UNTIL_MODEL_FULL:
+        curr_round += 1
+        sat_value, implication_graph = BCP(cnf_formula, implication_graph)
+
+        if sat_value == UNSAT:
+            if implication_graph.curr_decision_level == 0:
+                return sat_value, implication_graph.total_model, cnf_formula
+            else:
+                backjump_level, conflict_clause = analyze_conflict(implication_graph)
+                cnf_formula.add_clause(conflict_clause)
+                implication_graph.backjump_to_level(backjump_level)
+                cnf_formula.on_backjump(implication_graph.total_model)
+                continue
+
+        elif sat_value == SAT:
+            if max_rounds != CONTINUE_UNTIL_MODEL_FULL or cnf_formula.get_all_variables().issubset(implication_graph.total_model.keys()):
+                return sat_value, implication_graph.total_model, cnf_formula
+
+        chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
+        implication_graph.add_decision(chosen_variable, chosen_assignment)
+        cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment, implication_graph.total_model)
 
 
 # region Pre-processing
@@ -97,26 +144,7 @@ def give_representation_to_sub_formulae(propositional_formula: PropositionalForm
 # endregion
 
 
-def DLIS(cnf_formula: CNFFormula, model: Model) -> Tuple[str, bool]:
-    possible_assignments = (True, False)
-    candidates = cnf_formula.get_all_variables() - set(model.keys())  # Starting with all unassigned variables
-
-    best_candidate = ""
-    best_candidate_assignment = ""
-    best_candidate_score = -1
-
-    for cur_candidate in candidates:
-        for cur_assignment in possible_assignments:
-            cur_score = cnf_formula.count_clauses_satisfied_by_assignment(cur_candidate, cur_assignment)
-            if cur_score > best_candidate_score:  # Taking the best decision that won't make a clause UNSAT
-                best_candidate = cur_candidate
-                best_candidate_assignment = cur_assignment
-                best_candidate_score = cur_score
-
-    return best_candidate, best_candidate_assignment
-
-
-def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: int = 5, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
+def decide_old(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: int = 5, decision_heuristic=DLIS) -> Tuple[str, Model, CNFFormula]:
     implication_graph = ImplicationGraph(partial_model)
     cnf_formula.on_backjump(implication_graph.total_model)  # Initial loading
 
@@ -139,7 +167,7 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
         sat_value, implication_graph = BCP(cnf_formula, implication_graph)
 
         if sat_value == UNSAT:
-            if implication_graph.curr_level == 0:
+            if implication_graph.curr_decision_level == 0:
                 break
             else:
                 backjump_level, conflict_clause = analyze_conflict(implication_graph)

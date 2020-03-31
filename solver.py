@@ -7,7 +7,7 @@ from utils.formula_utils import *
 
 
 def test_sat_solver_on_single_formula(formula, correct_state):
-    state, model, new_formula = sat_solver(formula, max_decision_levels=CONTINUE_UNTIL_MODEL_FULL)
+    state, model, new_formula = sat_solver(formula, max_rounds=CONTINUE_UNTIL_MODEL_FULL)
 
     assert state == correct_state, "Got state: " + str(state)
 
@@ -40,16 +40,16 @@ def test_sat_solver():
     test_3 = formula_3, correct_state_3
     tests.append(test_3)
 
-    print("\n\n\nVerify sat_solver by running it on propositional formulae.")
+    print("\nVerify sat_solver by running it on propositional formulae.")
 
     for test_index, (formula, correct_state) in enumerate(tests):
-        print("\n\nTest number: " + str(test_index))
+        print("\nTest number: " + str(test_index))
         print("Checking that " + str(formula) + " is found to be " + correct_state)
         test_sat_solver_on_single_formula(formula, correct_state)
 
 
 def test_smt_solver():
-    print("\n\n\nVerify smt_solver by running it on Tuf formulae.")
+    print("\nVerify smt_solver by running it on Tuf formulae.")
     fo_formula1 = FO_Formula.parse('((f(a,c)=b|f(a,g(b))=b)&~c=g(b))')
     fo_formula2 = FO_Formula.parse('(f(x)=f(y)&~x=y)')
     fo_formula3 = FO_Formula.parse('(f(f(f(a)))=a&(f(f(f(f(f(a)))))=a&~f(a)=a))')
@@ -82,4 +82,4 @@ def main(test_sat=True, test_smt=True):
 
 
 if __name__ == '__main__':
-    main(test_sat=False, test_smt=True)
+    main(test_sat=True, test_smt=True)
