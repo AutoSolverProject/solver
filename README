@@ -23,10 +23,10 @@ For the project we authored the following files:
     - Makefile
 
 
-To run the solver, open shell (in Linux) or cmd prompt (in Windows), in the folder of the project, and type:
+To run the solver, open shell (in Linux) or cmd prompt (in Windows), while in the folder solver, and type:
 ---- python3 main.py
 
-To run the naive_lp_solver, open shell (in Linux) or cmd prompt (in Windows), in the folder of the project, and type:
+To run the naive_lp_solver, open shell (in Linux) or cmd prompt (in Windows), while in the folder naive_lp_solver, and type:
 ---- make
 (make clean - will delete the compiled files)
 Additionally to edit the problem the naive_lp_solver solves, open the naive_lp_solver.cpp file, change the values
