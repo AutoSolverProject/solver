@@ -214,7 +214,6 @@ class CNFFormula:
 
 
     def to_PropositionalFormula(self) -> PropositionalFormula:
-        print(str(self))
         return PropositionalFormula.parse(str(self))
 
 
