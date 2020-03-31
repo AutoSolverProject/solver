@@ -14,7 +14,7 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
         model_over_formula = model_over_skeleton_to_model_over_formula(model_over_skeleton, substitution_map)
         congruence_closure_unviolated = check_congruence_closure(model_over_formula, formula)
 
-        if state == SAT and congruence_closure_unviolated and len(model_over_skeleton.keys()) == len(skeleton.variables()):
+        if state == SAT and congruence_closure_unviolated and len(model_over_skeleton.keys()) == len(updated_skeleton.variables()):
             return state, model_over_formula
 
         elif not congruence_closure_unviolated:
