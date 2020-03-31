@@ -54,21 +54,21 @@ def test_smt_solver():
     fo_formula2 = FO_Formula.parse('(f(x)=f(y)&~x=y)')
     fo_formula3 = FO_Formula.parse('(f(f(f(a)))=a&(f(f(f(f(f(a)))))=a&~f(a)=a))')
     fo_formula4 = FO_Formula.parse('(g(a)=c&((~f(g(a))=f(c)|g(a)=d)&~c=d))')
-    fo_formula5 = FO_Formula.parse('((multiply(a,plus(abs(b),c))=d&~multiply(b,plus(abs(a),c))=d)&a=b)')
-    sat_fo_formulae = {fo_formula1, fo_formula2}
-    unsat_fo_formulae = {fo_formula3, fo_formula4, fo_formula5}
+    fo_formula5 = FO_Formula.parse('((multiply(a,plus(nabs(b),c))=d&~multiply(b,plus(nabs(a),c))=d)&a=b)')
+    sat_fo_formulae = [fo_formula1, fo_formula2]
+    unsat_fo_formulae = [fo_formula3, fo_formula4, fo_formula5]
 
     for formula in sat_fo_formulae:
         print("Checking Tuf-satisfiability of formula " + str(formula))
         state, model = smt_solver(formula)
         assert state == SAT
-        print("The formula " + str(formula) + ", is Tuf-satisfiable.")
+        print("The formula " + str(formula) + ", is Tuf-satisfiable.\n\n")
 
     for formula in unsat_fo_formulae:
         print("Checking T-satisfiability of formula " + str(formula))
         state, model = smt_solver(formula)
         assert state == UNSAT
-        print("The formula " + str(formula) + ", is not Tuf-satisfiable.")
+        print("The formula " + str(formula) + ", is not Tuf-satisfiable.\n\n")
 
 
 def main(test_sat=True, test_smt=True):
@@ -82,4 +82,4 @@ def main(test_sat=True, test_smt=True):
 
 
 if __name__ == '__main__':
-    main(test_sat=True, test_smt=True)
+    main(test_sat=False, test_smt=True)
