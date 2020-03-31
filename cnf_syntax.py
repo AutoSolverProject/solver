@@ -94,8 +94,8 @@ class CNFClause:
 
 
     def on_backjump(self, model: Model):
-        self.update_watched_literals_and_maybe_propagate(model)
         self.update_with_new_model(model)
+        self.update_watched_literals_and_maybe_propagate(model)
         return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
 
@@ -117,8 +117,6 @@ class CNFClause:
         # No literal was satisfied, so SAT_UNKNOWN unless all of them are in the model, and then there's no chance for SAT
         if self.get_all_variables().issubset(model.keys()):
             self.is_sat = UNSAT
-            self.watched_literals = set()
-            self.inferred_assignment = None
         else:
             self.is_sat = SAT_UNKNOWN
 
