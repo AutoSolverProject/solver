@@ -421,7 +421,7 @@ class ImplicationGraph:
                 potential_uips.intersection_update(set(current_path))
                 for node_index in range(len(current_path)):
                     curr_node = current_path[node_index]
-                    curr_node_dist = node_index
+                    curr_node_dist = node_index + 1
                     if curr_node_dist < potential_uips_distances[curr_node]:
                         potential_uips_distances[curr_node] = curr_node_dist
 
