@@ -12,7 +12,7 @@ def test_sat_solver_on_single_formula(formula, correct_state):
         print("Making another round :)")
         state, model, new_formula = sat_solver(new_formula, model)  # Don't use max_decision_levels for debugging
 
-    assert state == correct_state, "Got state: " + state
+    assert state == correct_state, "Got state: " + str(state)
     if state == UNSAT:
         print("Correct - The formula" + str(formula) + " has no satisfiable assignment.")
     else:

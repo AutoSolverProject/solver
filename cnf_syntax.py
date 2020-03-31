@@ -9,7 +9,7 @@ from propositional_logic.semantics import Model
 
 UNSAT = "UNSAT"
 SAT = "SAT"
-SAT_UNKNOWN = "UNKNOWN"
+SAT_UNKNOWN = "SAT_UNKNOWN"
 
 
 class CNFClause:
