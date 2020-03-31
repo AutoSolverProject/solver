@@ -15,8 +15,13 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
         model_over_formula = model_over_skeleton_to_model_over_formula(model_over_skeleton, substitution_map)
         congruence_closure_unviolated = check_congruence_closure(model_over_formula, formula)
 
-        if state == SAT and congruence_closure_unviolated and updated_skeleton.variables().issubset(model_over_skeleton.keys()):
-            return state, model_over_formula
+        if state == SAT and congruence_closure_unviolated:
+            if updated_skeleton.variables().issubset(model_over_skeleton.keys()):
+                return state, model_over_formula
+            else:  # Try to fill the rest of the model, skip the theory for simplifying the process
+                state, model_over_updated_skeleton, updated_skeleton = \
+                    sat_solver(updated_skeleton, partial_model=model_over_skeleton, max_rounds=CONTINUE_UNTIL_MODEL_FULL)
+                model_over_skeleton = {var: assignment for var, assignment in model_over_updated_skeleton.items() if var in skeleton.variables()}
 
         elif not congruence_closure_unviolated:
             conflict = get_conflict(model_over_skeleton)
@@ -32,7 +37,7 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
                     model_over_skeleton[k] = True
 
             state, model_over_updated_skeleton, updated_skeleton = \
-                sat_solver(updated_skeleton, partial_model=model_over_skeleton, max_rounds=CONTINUE_UNTIL_MODEL_FULL)
+                sat_solver(updated_skeleton, partial_model=model_over_skeleton)
             model_over_skeleton = {var: assignment for var, assignment in model_over_updated_skeleton.items() if var in skeleton.variables()}
 
     return UNSAT, model_over_skeleton
