@@ -1,6 +1,7 @@
 from cnf_syntax import *
 from cnf_syntax import UNSAT, SAT, SAT_UNKNOWN
 from logic_utils import __prefix_with_index_sequence_generator, fresh_variable_name_generator
+from propositional_logic.semantics import evaluate
 from utils.normal_forms import *
 from propositional_logic.syntax import Formula as PropositionalFormula
 from typing import Dict, Tuple
@@ -128,7 +129,6 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
         chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
         implication_graph.add_decision(chosen_variable, chosen_assignment)
 
-        # No need to check ret value - we never choose a variable that'll cause UNSAT
         cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment, implication_graph.total_model)
         sat_value, implication_graph = BCP(cnf_formula, implication_graph)
 

@@ -7,7 +7,9 @@ from utils.formula_utils import *
 
 
 def test_sat_solver_on_single_formula(formula, correct_state):
-    state, model, new_formula = sat_solver(formula, max_decision_levels=30)
+    VERY_BIG_NUMBER = 100
+
+    state, model, new_formula = sat_solver(formula, max_decision_levels=VERY_BIG_NUMBER)
     while state == SAT_UNKNOWN:
         print("Making another round :)")
         state, model, new_formula = sat_solver(new_formula, model)  # Don't use max_decision_levels for debugging
@@ -38,7 +40,7 @@ def test_sat_solver():
     assert is_satisfiable(formula_2)
     test_3 = formula_3, correct_state_3
 
-    tests = [test_2, test_3]
+    tests = [test_1, test_2, test_3]
 
     print("\n\n\nVerify sat_solver by running it on propositional formulae.")
     for test_index, (formula, correct_state) in enumerate(tests):

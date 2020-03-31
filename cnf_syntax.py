@@ -124,6 +124,7 @@ class CNFClause:
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool):
+        # todo
         if self.is_sat in (SAT, UNSAT) or variable not in self.all_literals:
             return self.inferred_assignment if self.inferred_assignment is not None else self.is_sat
 
@@ -231,6 +232,7 @@ class CNFFormula:
 
 
     def count_clauses_satisfied_by_assignment(self, variable: str, assignment: bool):
+        # todo
         assert is_variable(variable)
         sat_counter = 0
         for clause in self.variable_to_containing_clause[variable]:
@@ -243,6 +245,7 @@ class CNFFormula:
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool) -> str:
+        # todo
         assert is_variable(variable)
         num_satisfied = self.count_clauses_satisfied_by_assignment(variable, assignment)
         if num_satisfied == UNSAT:
@@ -289,7 +292,7 @@ class CNFFormula:
 
     def update_with_new_assignment(self, variable: str, assignment: bool, model: Model):
         assert is_variable(variable)
-        sat_counter = 0
+        are_all_sat = True
         found_unsat = None
         inferred_assignment = SAT_UNKNOWN  # If we got one inferred assignment, we'll return it. Otherwise, we'll return SAT_UNKNOWN
 
@@ -297,20 +300,22 @@ class CNFFormula:
             result = clause.update_with_new_assignment(variable, assignment, model)
 
             if result == UNSAT:
-                found_unsat = clause
+                found_unsat = clause  # Maybe can return here, but won't make big difference
+                are_all_sat = False
 
             elif result == SAT:
-                sat_counter += 1
-
-            elif result == SAT_UNKNOWN:
                 continue
 
-            else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT. Note that inferred_assignment might change
+            elif result == SAT_UNKNOWN:
+                are_all_sat = False
+
+            else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT. Note that means inferred_assignment might change
                 inferred_assignment = result + (clause,)
+                are_all_sat = False
 
         if found_unsat is not None:
             self.last_result = UNSAT, found_unsat
-        elif sat_counter == len(self.clauses):
+        elif are_all_sat:
             self.last_result = SAT
         else:
             self.last_result = inferred_assignment
@@ -417,11 +422,12 @@ class ImplicationGraph:
 
 
     def find_uip(self, cnf_formula: CNFFormula) -> str:
+        # todo: fix
         assert self.conflict_clause is not None
         assert self.curr_level >= 1
 
         last_decision_variable = list(self.decision_variables[-1].keys())[0]  # List of dict only for level 0. From lvl. 1 always 1 decision var per level
-        potential_uips = set(copy.deepcopy(self.total_model.keys()))
+        potential_uips = set(self.total_model.keys())
         potential_uips_distances = {potential_uip: math.inf for potential_uip in potential_uips}
         current_path = list()
 
