@@ -460,8 +460,8 @@ class ImplicationGraph:
 
 
     def get_last_assigned_var(self, clause_to_resolve: CNFClause) -> str:
-        last_assigned_var = None
-        last_assigned_var_decision_level = 0
+        last_assigned_var = ""
+        last_assigned_var_decision_level = -1
         for cur_var in clause_to_resolve.get_all_variables():
             cur_decision_level = self.get_decision_level_of_variable(cur_var)
             if (cur_decision_level > last_assigned_var_decision_level) \
@@ -469,7 +469,7 @@ class ImplicationGraph:
                 last_assigned_var = cur_var
                 last_assigned_var_decision_level = cur_decision_level
 
-        assert last_assigned_var is not None
+        assert last_assigned_var != ""
         return last_assigned_var
 
 
@@ -484,7 +484,7 @@ class ImplicationGraph:
 
         all_vars_before_backjump = set(self.total_model.keys())
         self.total_model = dict()
-        for i in range(self.curr_level):
+        for i in range(self.curr_level + 1):
             self.total_model.update(self.decision_variables[i])
             self.total_model.update(self.inferred_variables[i])
         all_vars_after_backjump = set(self.total_model.keys())

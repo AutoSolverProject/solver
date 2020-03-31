@@ -1,7 +1,6 @@
 from cnf_syntax import *
 from cnf_syntax import UNSAT, SAT, SAT_UNKNOWN
-from logic_utils import __prefix_with_index_sequence_generator, fresh_variable_name_generator
-from propositional_logic.semantics import evaluate
+from logic_utils import fresh_variable_name_generator
 from utils.normal_forms import *
 from propositional_logic.syntax import Formula as PropositionalFormula
 from typing import Dict, Tuple
