@@ -296,7 +296,12 @@ class CNFFormula:
             else:  # Result is a inferred assignment. Continue looping to make sure not UNSAT. Note that inferred_assignment might change
                 inferred_assignment = result + (clause,)
 
-        self.last_result = UNSAT, found_unsat if found_unsat is not None else SAT if sat_counter == len(self.clauses) else inferred_assignment
+        if found_unsat is not None:
+            self.last_result = UNSAT, found_unsat
+        elif sat_counter == len(self.clauses):
+            self.last_result = SAT
+        else:
+            self.last_result = inferred_assignment
 
 
 class ImplicationGraph:
