@@ -6,7 +6,10 @@ from propositional_logic.syntax import Formula as PropositionalFormula
 from typing import Dict, Tuple
 
 
-def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_levels: int = 5) \
+CONTINUE_UNTIL_MODEL_FULL = -1
+
+
+def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, conflict=None, max_decision_levels=5) \
         -> Tuple[str, Model, PropositionalFormula]:
     if partial_model is None:
         partial_model = dict()
@@ -119,10 +122,16 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
 
     # Decision level zero:
     sat_value, implication_graph = BCP(cnf_formula, implication_graph)
-    if sat_value in (SAT, UNSAT):
+    if sat_value == UNSAT:
         return sat_value, implication_graph.total_model, cnf_formula
+    elif sat_value == SAT:
+        if max_decision_levels != CONTINUE_UNTIL_MODEL_FULL or cnf_formula.get_all_variables().issubset(implication_graph.total_model.keys()):
+            return sat_value, implication_graph.total_model, cnf_formula
 
-    for decision_level in range(1, max_decision_levels + 1):
+    cur_decision_level = 0
+    while cur_decision_level < max_decision_levels or max_decision_levels == CONTINUE_UNTIL_MODEL_FULL:
+        cur_decision_level += 1
+
         chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
         implication_graph.add_decision(chosen_variable, chosen_assignment)
 
@@ -139,7 +148,8 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_decision_levels: i
                 cnf_formula.on_backjump(implication_graph.total_model)
 
         elif sat_value == SAT:
-            break
+            if max_decision_levels != CONTINUE_UNTIL_MODEL_FULL or cnf_formula.get_all_variables().issubset(implication_graph.total_model.keys()):
+                break
 
     return sat_value, implication_graph.total_model, cnf_formula
 

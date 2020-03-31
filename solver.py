@@ -1,20 +1,16 @@
 from cnf_syntax import UNSAT, SAT, SAT_UNKNOWN
 from propositional_logic.semantics import is_contradiction, evaluate, is_satisfiable
 from first_order_logic.syntax import Formula as FO_Formula
-from sat_solver import sat_solver
+from sat_solver import sat_solver, CONTINUE_UNTIL_MODEL_FULL
 from smt_solver import smt_solver
 from utils.formula_utils import *
 
 
 def test_sat_solver_on_single_formula(formula, correct_state):
-    VERY_BIG_NUMBER = 100
-
-    state, model, new_formula = sat_solver(formula, max_decision_levels=VERY_BIG_NUMBER)
-    while state == SAT_UNKNOWN:
-        print("Making another round :)")
-        state, model, new_formula = sat_solver(new_formula, model)  # Don't use max_decision_levels for debugging
+    state, model, new_formula = sat_solver(formula, max_decision_levels=CONTINUE_UNTIL_MODEL_FULL)
 
     assert state == correct_state, "Got state: " + str(state)
+
     if state == UNSAT:
         print("Correct - The formula" + str(formula) + " has no satisfiable assignment.")
     else:
@@ -30,7 +26,7 @@ def test_sat_solver():
     correct_state_1 = UNSAT
     assert is_contradiction(formula_1)
     test_1 = formula_1, correct_state_1
-    # tests.append(test_1)
+    tests.append(test_1)
 
     formula_2 = PropositionalFormula.parse('(~p2&(p2|((p1<->p3)->p2)))')
     correct_state_2 = SAT
