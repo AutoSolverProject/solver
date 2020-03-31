@@ -21,6 +21,11 @@ class CNFClause:
         self.all_literals = dict.fromkeys(self.positive_literals, True)
         self.all_literals.update(dict.fromkeys(self.negative_literals, False))
 
+        for pos_var in self.positive_literals:
+            assert is_variable(pos_var)
+        for neg_var in self.negative_literals:
+            assert is_variable(neg_var)
+
         self.is_sat = UNSAT if len(self) == 0 else SAT_UNKNOWN
         self.inferred_assignment = None
         self.watched_literals = set()

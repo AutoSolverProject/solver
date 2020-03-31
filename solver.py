@@ -7,7 +7,7 @@ from utils.formula_utils import *
 
 
 def test_sat_solver_on_single_formula(formula, correct_state):
-    state, model, new_formula = sat_solver(formula)
+    state, model, new_formula = sat_solver(formula, max_decision_levels=30)
     while state == SAT_UNKNOWN:
         print("Making another round :)")
         state, model, new_formula = sat_solver(new_formula, model)  # Don't use max_decision_levels for debugging

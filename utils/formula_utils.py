@@ -48,7 +48,7 @@ def parse_CNFFormula(formula_str: str) -> CNFFormula:
     for clause in clauses_str:
         variables = clause.split("|")
         positive_variables = {variable for variable in variables if not is_unary(variable[0])}
-        negative_variables = {variable for variable in variables if is_unary(variable[0])}
+        negative_variables = {variable[1:] for variable in variables if is_unary(variable[0])}
         new_clause = CNFClause(positive_variables, negative_variables)
         clauses.append(new_clause)
 
