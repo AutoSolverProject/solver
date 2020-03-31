@@ -80,6 +80,7 @@ def decide(cnf_formula: CNFFormula, partial_model: Model, max_rounds: int = 5, d
         chosen_variable, chosen_assignment = decision_heuristic(cnf_formula, implication_graph.total_model)
         implication_graph.add_decision(chosen_variable, chosen_assignment)
         cnf_formula.update_with_new_assignment(chosen_variable, chosen_assignment, implication_graph.total_model)
+    return sat_value, implication_graph.total_model, cnf_formula
 
 
 # region Pre-processing
