@@ -160,8 +160,8 @@ class Term:
         if len(s) > 0:
             if is_constant(s[0]) or is_variable(s[0]):
                 i = 0
-                if s[0] == '_':
-                    return Term(s[0]), s[1:]
+                if s[i] == '_':
+                    return Term(s[i]), s[i+1:]
                 while i < len(s) and s[i].isalnum():
                     i += 1
                 if i < len(s):

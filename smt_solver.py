@@ -7,20 +7,20 @@ from disjoint_set_tree import *
 
 def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
     skeleton, substitution_map = formula.propositional_skeleton()
-    state, model_over_skeleton, updated_skeleton = sat_solver(skeleton)
+    state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, max_decision_levels=1)
 
     while state != UNSAT:
 
         model_over_formula = model_over_skeleton_to_model_over_formula(model_over_skeleton, substitution_map)
         congruence_closure_unviolated = check_congruence_closure(model_over_formula, formula)
 
-        if state == SAT and congruence_closure_unviolated and len(model_over_skeleton.keys()) == len(updated_skeleton.variables()):
+        if state == SAT and congruence_closure_unviolated and len(model_over_skeleton.keys()) == len(skeleton.variables()):
             return state, model_over_formula
 
         elif not congruence_closure_unviolated:
-            conflict = get_conflict(model_over_formula)
+            conflict = get_conflict(model_over_skeleton)
             state, model_over_skeleton, updated_skeleton = \
-                sat_solver(skeleton, model_over_skeleton, conflict=conflict)
+                sat_solver(skeleton, partial_model=model_over_skeleton, conflict=conflict, max_decision_levels=1)
 
         else:
             model_over_formula = t_propagate(model_over_formula, formula)
@@ -28,7 +28,7 @@ def smt_solver(formula: FO_Formula) -> Tuple[str, Model]:
             for k, v in substitution_map.items():
                 if v in model_over_formula.keys() and model_over_formula[v]:
                     model_over_skeleton[k] = True
-            state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, model_over_skeleton)
+            state, model_over_skeleton, updated_skeleton = sat_solver(skeleton, partial_model=model_over_skeleton, max_decision_levels=1)
     return UNSAT, model_over_skeleton
 
 
@@ -101,9 +101,9 @@ def get_conflict(assignment):
     i = 1
     for a, v in assignment.items():
         if v:
-            formula += '~' + a
+            formula += '~' + str(a)
         else:
-            formula += a
+            formula += str(a)
         if i == num_vars:
             formula += ')'*(num_vars-1)
         else:
