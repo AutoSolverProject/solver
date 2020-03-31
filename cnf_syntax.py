@@ -54,7 +54,7 @@ class CNFClause:
             my_repr += "|" + str(pos_literals_list[pos_index]) + ")"
 
         for neg_index in range(first_neg, len(neg_literals_list)):
-            my_repr += "|" + str(neg_literals_list[neg_index]) + ")"
+            my_repr += "|" + "~" + str(neg_literals_list[neg_index]) + ")"
 
         return my_repr
 
@@ -87,6 +87,10 @@ class CNFClause:
 
     def get_all_variables(self) -> Set[str]:
         return set(self.all_literals.keys())
+
+
+    def get_all_literals(self) -> Set[str]:
+        return {pos for pos in self.positive_literals} | {'~' + neg for neg in self.negative_literals}
 
 
     def on_backjump(self, model: Model):
@@ -179,14 +183,14 @@ class CNFFormula:
 
     def __init__(self, clauses: List[CNFClause]):
         self.clauses = clauses
-        self.literal_to_containing_clause = dict()
+        self.variable_to_containing_clause = dict()
         self.last_result = SAT_UNKNOWN
 
         for clause in self.clauses:
             for var in clause.get_all_variables():
-                current_clauses = self.literal_to_containing_clause.get(var, set())
+                current_clauses = self.variable_to_containing_clause.get(var, set())
                 current_clauses.add(clause)
-                self.literal_to_containing_clause[var] = current_clauses
+                self.variable_to_containing_clause[var] = current_clauses
 
 
     def __repr__(self) -> str:
@@ -223,12 +227,13 @@ class CNFFormula:
 
 
     def get_all_variables(self) -> Set[str]:
-        return {literal for literal in self.literal_to_containing_clause.keys() if is_variable(literal)}
+        return set(self.variable_to_containing_clause.keys())
 
 
     def count_clauses_satisfied_by_assignment(self, variable: str, assignment: bool):
+        assert is_variable(variable)
         sat_counter = 0
-        for clause in self.literal_to_containing_clause[variable]:
+        for clause in self.variable_to_containing_clause[variable]:
             sat_value = clause.is_satisfied_under_assignment(variable, assignment)
             if sat_value == SAT:
                 sat_counter += 1
@@ -238,6 +243,7 @@ class CNFFormula:
 
 
     def is_satisfied_under_assignment(self, variable: str, assignment: bool) -> str:
+        assert is_variable(variable)
         num_satisfied = self.count_clauses_satisfied_by_assignment(variable, assignment)
         if num_satisfied == UNSAT:
             return UNSAT
@@ -248,9 +254,9 @@ class CNFFormula:
     def add_clause(self, new_clause: CNFClause):
         self.clauses.append(new_clause)
         for var in new_clause.get_all_variables():
-            current_clauses = self.literal_to_containing_clause.get(var, set())
+            current_clauses = self.variable_to_containing_clause.get(var, set())
             current_clauses.add(new_clause)
-            self.literal_to_containing_clause[var] = current_clauses
+            self.variable_to_containing_clause[var] = current_clauses
 
 
     def on_backjump(self, model: Model):
@@ -282,11 +288,12 @@ class CNFFormula:
 
 
     def update_with_new_assignment(self, variable: str, assignment: bool, model: Model):
+        assert is_variable(variable)
         sat_counter = 0
         found_unsat = None
         inferred_assignment = SAT_UNKNOWN  # If we got one inferred assignment, we'll return it. Otherwise, we'll return SAT_UNKNOWN
 
-        for clause in self.literal_to_containing_clause[variable]:
+        for clause in self.variable_to_containing_clause[variable]:
             result = clause.update_with_new_assignment(variable, assignment, model)
 
             if result == UNSAT:

@@ -25,8 +25,11 @@ def sat_solver(propositional_formula: PropositionalFormula, partial_model=None, 
             cnf_formula.add_clause(conflict_CNFClause)
 
     result, model, equisatisfiable_CNFFormula = decide(cnf_formula, partial_model, max_decision_levels=max_decision_levels)
+
     equisatisfiable_PropositionalFormula = equisatisfiable_CNFFormula.to_PropositionalFormula()
-    return result, model, equisatisfiable_PropositionalFormula
+    original_model = {var: assignment for var, assignment in model.items() if var in propositional_formula.variables()}
+
+    return result, original_model, equisatisfiable_PropositionalFormula
 
 
 # region Pre-processing
